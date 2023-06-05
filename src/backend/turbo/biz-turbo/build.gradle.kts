@@ -1,6 +1,7 @@
 dependencies {
     api(project(":api-turbo"))
     api(project(":model-turbo"))
+    api(project(":common-turbo:common-turbo-api"))
     api(project(":common-turbo:common-turbo-client"))
     api(project(":common-turbo:common-turbo-web"))
     api(project(":common-turbo:common-turbo-quartz"))

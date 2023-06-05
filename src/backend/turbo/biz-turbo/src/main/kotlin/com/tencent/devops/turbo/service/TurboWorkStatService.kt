@@ -4,7 +4,7 @@ package com.tencent.devops.turbo.service
 import com.fasterxml.jackson.core.type.TypeReference
 import com.tencent.devops.common.api.exception.TurboException
 import com.tencent.devops.common.api.exception.code.TURBO_THIRDPARTY_SYSTEM_FAIL
-import com.tencent.devops.common.api.util.OkhttpUtil
+import com.tencent.devops.common.api.util.OkhttpUtils
 import com.tencent.devops.common.util.JsonUtil
 import com.tencent.devops.turbo.dao.repository.TurboRecordRepository
 import com.tencent.devops.turbo.dao.repository.TurboWorkJobStatsDataRepository
@@ -41,7 +41,7 @@ class TurboWorkStatService @Autowired constructor(
      */
     fun getTbsWorkStatData(turboRecordId: String): TurboWorkStatsDto {
         val tbsWorkStatDataStr: String = try {
-            OkhttpUtil.doGet(
+            OkhttpUtils.doGet(
                 url = "$tbsRootPath/api/v1/disttask/work_stats/?decode_job=1&task_id=$turboRecordId"
             )
         } catch (e: Exception) {
