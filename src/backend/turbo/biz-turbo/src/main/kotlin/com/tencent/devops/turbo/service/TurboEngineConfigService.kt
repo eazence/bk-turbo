@@ -777,6 +777,7 @@ class TurboEngineConfigService @Autowired constructor(
      * 获取编译加速工具的版本清单
      */
     fun getDistTaskVersion(): List<String> {
+        logger.info(">>>>>>>>>>>>>>> entry >>>>>>>>>>>>>")
         return TBSSdkApi.queryVersionOptions("disttask", mapOf())
     }
 }
