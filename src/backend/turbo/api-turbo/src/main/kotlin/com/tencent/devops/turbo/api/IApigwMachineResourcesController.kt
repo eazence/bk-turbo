@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 
 @Api(tags = ["OPENAPI_SERVER_RESOURCES"], description = "服务器资源查询接口")
-@RequestMapping("/machine/resources")
+@RequestMapping("/open/machine/resources")
 @FeignClient(name = "turbo", contextId = "IApigwMachineResourcesController")
 interface IApigwMachineResourcesController {
 
