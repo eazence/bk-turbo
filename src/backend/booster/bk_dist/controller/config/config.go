@@ -49,6 +49,12 @@ type ServerConfig struct {
 
 	EnableLib  bool `json:"enable_lib" value:"false" usage:"if true, controller will enable remote lib.exe"`
 	EnableLink bool `json:"enable_link" value:"false" usage:"if true, controller will enable remote link.exe"`
+
+	LongTCP bool `json:"long_tcp" value:"false" usage:"if true, controller will connect to remote worker with long tcp connection"`
+
+	UseDefaultWorker bool `json:"use_default_worker" value:"true" usage:"if true, controller will use first worker available"`
+
+	DynamicPort bool `json:"dynamic_port" value:"false" usage:"if true, controller will listen dynamic port"`
 }
 
 // CertConfig  configuration of Cert

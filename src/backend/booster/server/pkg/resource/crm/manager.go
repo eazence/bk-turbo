@@ -140,6 +140,32 @@ type ResourceParam struct {
 	BrokerName string `json:"broker_name"`
 }
 
+func (rp *ResourceParam) copy() ResourceParam {
+	newrp := ResourceParam{
+		City:       rp.City,
+		Platform:   rp.Platform,
+		Image:      rp.Image,
+		BrokerName: rp.BrokerName,
+		Env:        make(map[string]string),
+		Ports:      make(map[string]string),
+		Volumes:    make(map[string]op.BcsVolume),
+	}
+
+	for k, v := range rp.Env {
+		newrp.Env[k] = v
+	}
+
+	for k, v := range rp.Ports {
+		newrp.Ports[k] = v
+	}
+
+	for k, v := range rp.Volumes {
+		newrp.Volumes[k] = v
+	}
+
+	return newrp
+}
+
 const (
 	ServiceStatusStaging = op.ServiceStatusStaging
 	ServiceStatusRunning = op.ServiceStatusRunning
@@ -477,7 +503,8 @@ func (rm *resourceManager) isFinishDeploying(resourceID, user string) bool {
 
 	switch info.Status {
 	case ServiceStatusRunning, ServiceStatusFailed:
-		blog.Infof("crm: check isFinishDeploying resource(%s) user(%s) finish deploying", resourceID, user)
+		blog.Infof("crm: check isFinishDeploying resource(%s) user(%s) finish deploying with status:%s",
+			resourceID, user, info.Status.String())
 		return true
 	default:
 		return false
@@ -660,7 +687,8 @@ func (rm *resourceManager) getResources(resourceID string) (*resource, error) {
 		return nil, ErrorResourceNoExist
 	}
 
-	return copyResource(r), nil
+	// return copyResource(r), nil
+	return r.copy(), nil
 }
 
 func (rm *resourceManager) getServiceInfo(resourceID, user string) (*op.ServiceInfo, error) {
@@ -668,7 +696,23 @@ func (rm *resourceManager) getServiceInfo(resourceID, user string) (*op.ServiceI
 		return nil, ErrorManagerNotRunning
 	}
 
+	var t1start, t1end int64
+	var t2start, t2end int64
+	var t3start, t3end int64
+	defer func() {
+		d1 := t1end - t1start
+		d2 := t2end - t2start
+		d3 := t3end - t3start
+		if d1 > 2 || d2 > 2 || d3 > 2 {
+			blog.Infof("crm: resourceID(%s) user(%s) too long spent %d seconds to getServerRealName,"+
+				"%d to GetServerStatus,%d to freshDeployingStatus",
+				resourceID, user, d1, d2, d3)
+		}
+	}()
+
+	t1start = time.Now().Unix()
 	targetID, err := rm.getServerRealName(resourceID)
+	t1end = time.Now().Unix()
 	if err != nil {
 		blog.Errorf("crm: get service info for resource(%s) user(%s), get server real name failed: %v",
 			resourceID, user, err)
@@ -678,7 +722,10 @@ func (rm *resourceManager) getServiceInfo(resourceID, user string) (*op.ServiceI
 		blog.Errorf("crm: get service info for resource(%s) user(%s), get handlerMap nil", resourceID, user)
 		return nil, fmt.Errorf("handlerMap nil")
 	}
+
+	t2start = time.Now().Unix()
 	info, err := rm.operator.GetServerStatus(rm.conf.BcsClusterID, rm.handlerMap[user].GetNamespace(), targetID)
+	t2end = time.Now().Unix()
 	if err != nil {
 		blog.Errorf("crm: get service info for resource(%s) target(%s) user(%s) namespace(%s) failed: %v",
 			resourceID, targetID, user, rm.handlerMap[user].GetNamespace(), err)
@@ -692,7 +739,10 @@ func (rm *resourceManager) getServiceInfo(resourceID, user string) (*op.ServiceI
 		terminated = true
 	}
 
+	t3start = time.Now().Unix()
 	rm.freshDeployingStatus(resourceID, user, info.CurrentInstances, terminated)
+	t3end = time.Now().Unix()
+
 	return info, nil
 }
 
@@ -1042,9 +1092,10 @@ func (rm *resourceManager) checkBroker(broker *Broker) {
 		for i := 0; i < delta; i++ {
 			if err := broker.Launch(); err != nil {
 				switch err {
-				case ErrorBrokerNotEnoughResources, ErrorBrokeringUnderCoolingTime:
-					blog.Errorf("crm: try launching resource for broker(%s) with user(%s) failed: %v",
+				case ErrorBrokeringUnderCoolingTime, ErrorBrokerNotEnoughResources:
+					blog.Warnf("crm: try launching resource for broker(%s) with user(%s) failed: %v",
 						broker.name, broker.user, err)
+
 					return
 				}
 				blog.Errorf("crm: try launching resource for broker(%s) with user(%s) failed: %v",
@@ -1259,8 +1310,26 @@ func resource2Table(r *resource) *TableResource {
 	}
 }
 
-func copyResource(res *resource) *resource {
-	r := new(resource)
-	*r = *res
-	return r
+// func copyResource(res *resource) *resource {
+// 	r := new(resource)
+// 	*r = *res
+// 	return r
+// }
+
+func (r *resource) copy() *resource {
+	newr := resource{
+		resourceID:       r.resourceID,
+		user:             r.user,
+		param:            r.param.copy(),
+		resourceBlockKey: r.resourceBlockKey,
+		noReadyInstance:  r.noReadyInstance,
+		requestInstance:  r.requestInstance,
+		status:           r.status,
+		brokerResourceID: r.brokerResourceID,
+		brokerName:       r.brokerName,
+		brokerSold:       r.brokerSold,
+		initTime:         r.initTime,
+	}
+
+	return &newr
 }

@@ -76,11 +76,13 @@ type TaskCC struct {
 	responseFile     string
 	sourcedependfile string
 	pumpHeadFile     string
+	includeRspFiles  []string // 在rsp中通过@指定的其它rsp文件，需要发送到远端
 
 	// forcedepend 是我们主动导出依赖文件，showinclude 是编译命令已经指定了导出依赖文件
 	forcedepend          bool
 	pumpremote           bool
 	needcopypumpheadfile bool
+	pumpremotefailed     bool
 
 	pchFileDesc *dcSDK.FileDesc
 
@@ -155,6 +157,20 @@ func (cc *TaskCC) NeedRemoteResource(command []string) bool {
 // RemoteRetryTimes will return the remote retry times
 func (cc *TaskCC) RemoteRetryTimes() int {
 	return 0
+}
+
+// TODO : OnRemoteFail give chance to try other way if failed to remote execute
+func (cc *TaskCC) OnRemoteFail(command []string) (*dcSDK.BKDistCommand, error) {
+	blog.Infof("cc: start OnRemoteFail for: %v", command)
+
+	if cc.pumpremote {
+		blog.Infof("cc: set pumpremotefailed to true now")
+		cc.pumpremotefailed = true
+		cc.needcopypumpheadfile = true
+		cc.pumpremote = false
+		return cc.preExecute(command)
+	}
+	return nil, nil
 }
 
 // PostLockWeight decide post-execute lock weight, default 1
@@ -240,7 +256,7 @@ func (cc *TaskCC) analyzeIncludes(dependf string, workdir string) ([]*dcFile.Inf
 	blog.Infof("cc: got %d uniq include file from file: %s", len(uniqlines), dependf)
 
 	if dcPump.SupportPumpStatCache(cc.sandbox.Env) {
-		return commonUtil.GetFileInfo(uniqlines, true, true, dcPump.SupportPumpLstatByDir(cc.sandbox.Env)), nil
+		return commonUtil.GetFileInfo(uniqlines, true, true, dcPump.SupportPumpLstatByDir(cc.sandbox.Env))
 	} else {
 		includes := []*dcFile.Info{}
 		for _, l := range uniqlines {
@@ -266,7 +282,9 @@ func (cc *TaskCC) analyzeIncludes(dependf string, workdir string) ([]*dcFile.Inf
 				}
 				includes = append(includes, fstat)
 			} else {
-				blog.Infof("cc: do not deal include file: %s in file:%s for not existed or is dir", l, dependf)
+				blog.Warnf("cc: do not deal include file: %s in file:%s for not existed or is dir", l, dependf)
+				// return fail if not existed
+				return nil, fmt.Errorf("%s not existed", dependf)
 			}
 		}
 
@@ -359,6 +377,17 @@ func (cc *TaskCC) copyPumpHeadFile(workdir string) error {
 		}
 	}
 
+	// copy includeRspFiles
+	if len(cc.includeRspFiles) > 0 {
+		for _, l := range cc.includeRspFiles {
+			blog.Infof("cc: ready add rsp file: %s", l)
+			if !filepath.IsAbs(l) {
+				l, _ = filepath.Abs(filepath.Join(workdir, l))
+			}
+			includes = append(includes, formatFilePath(l))
+		}
+	}
+
 	blog.Infof("cc: copy pump head got %d uniq include file from file: %s", len(includes), cc.sourcedependfile)
 
 	if len(includes) == 0 {
@@ -405,7 +434,7 @@ func (cc *TaskCC) Includes(responseFile string, args []string, workdir string, f
 
 	// TOOD : maybe we should pass responseFile to calc md5, to ensure unique
 	var err error
-	cc.pumpHeadFile, err = getPumpIncludeFile(pumpdir, "pump_heads", ".txt", args)
+	cc.pumpHeadFile, err = getPumpIncludeFile(pumpdir, "pump_heads", ".txt", args, workdir)
 	if err != nil {
 		blog.Errorf("cc: do includes get output file failed: %v", err)
 		return nil, err
@@ -647,7 +676,7 @@ func (cc *TaskCC) preExecute(command []string) (*dcSDK.BKDistCommand, error) {
 	cc.originArgs = command
 
 	// ++ try with pump,only support windows now
-	if dcPump.SupportPump(cc.sandbox.Env) {
+	if !cc.pumpremotefailed && dcPump.SupportPump(cc.sandbox.Env) {
 		if satisfied, _ := cc.isPumpActionNumSatisfied(); satisfied {
 			req, err, notifyerr := cc.trypump(command)
 			if err != nil {
@@ -889,6 +918,7 @@ func (cc *TaskCC) preBuild(args []string) error {
 	cc.firstIncludeFile = getFirstIncludeFile(scannedData.args)
 	cc.inputFile = scannedData.inputFile
 	cc.outputFile = scannedData.outputFile
+	cc.includeRspFiles = scannedData.includeRspFiles
 
 	// handle the cross-compile issues.
 	targetArgs := cc.scannedArgs

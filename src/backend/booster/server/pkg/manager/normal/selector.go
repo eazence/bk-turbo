@@ -141,7 +141,7 @@ func (s *selector) pick(egn engine.Engine, tqg *engine.TaskQueueGroup, queueName
 		return
 	}
 
-	s.layer.LockTask(tb.ID)
+	s.layer.LockTask(tb.ID, "pick_of_selector")
 	defer s.layer.UnLockTask(tb.ID)
 
 	// for debug
@@ -161,9 +161,9 @@ func (s *selector) pick(egn engine.Engine, tqg *engine.TaskQueueGroup, queueName
 
 	if err = egn.LaunchTask(tb, queueName); err != nil {
 		if err != engine.ErrorNoEnoughResources {
-			blog.Errorf("selector: launch task(%s) from engine(%s) queue(%s) failed: %v", tb.ID, egn.Name(), queueName, err)
+			blog.Infof("selector: launch task(%s) from engine(%s) queue(%s) failed: %v", tb.ID, egn.Name(), queueName, err)
 		}
-		blog.Errorf("selector: launch task(%s) from engine(%s) queue(%s) failed: %v", tb.ID, egn.Name(), queueName, err)
+		blog.Infof("selector: launch task(%s) from engine(%s) queue(%s) failed: %v", tb.ID, egn.Name(), queueName, err)
 		return
 	}
 
