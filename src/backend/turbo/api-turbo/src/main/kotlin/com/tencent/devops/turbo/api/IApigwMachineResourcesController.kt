@@ -17,11 +17,10 @@ import org.springframework.web.bind.annotation.RequestParam
 interface IApigwMachineResourcesController {
 
     @ApiOperation("获取使用服务器资源统计")
-    @GetMapping("/getSummary", consumes = [MediaType.APPLICATION_JSON_VALUE],
-        produces = [MediaType.APPLICATION_JSON_VALUE])
+    @GetMapping("/getSummary", produces = [MediaType.APPLICATION_JSON_VALUE])
     fun getSummary(
         @ApiParam("应用code")
-        @RequestParam("appCode")
+        @RequestParam("app_code")
         appCode: String,
         @ApiParam("日期类型")
         @RequestParam("startDate")
