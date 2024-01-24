@@ -7,10 +7,12 @@ import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
 import org.aspectj.lang.reflect.MethodSignature
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.stereotype.Component
 
 @Aspect
 @Component
+@EnableAspectJAutoProxy
 class ApiAspect {
 
     companion object {
