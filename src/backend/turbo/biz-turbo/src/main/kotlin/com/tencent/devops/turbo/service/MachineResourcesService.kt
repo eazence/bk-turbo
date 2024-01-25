@@ -1,5 +1,6 @@
 package com.tencent.devops.turbo.service
 
+import com.tencent.devops.common.api.pojo.Page
 import com.tencent.devops.common.util.constants.BASE_EXCLUDED_PLAN_ID_LIST
 import com.tencent.devops.turbo.dao.mongotemplate.TbsDaySummaryDao
 import com.tencent.devops.turbo.dao.repository.BaseDataRepository
@@ -22,21 +23,31 @@ class MachineResourcesService @Autowired constructor(
     /**
      * 不传日期时默认统计上个月所有天数的数据
      */
-    fun querySummary(startDate: String?, endDate: String?): List<MachineResourcesStatVO> {
+    fun querySummary(
+        startDate: String?,
+        endDate: String?,
+        pageNum: Int?,
+        pageSize: Int?
+    ): Page<MachineResourcesStatVO> {
+        val page = pageNum?.takeIf { it > 0 }?.let { it - 1 } ?: 0
+        val pageSizeNum = pageSize?.coerceAtMost(10000) ?: 100
+
         // 获取需要过滤掉的方案id集合
         val baseDataEntity = baseDataRepository.findFirstByParamCode(BASE_EXCLUDED_PLAN_ID_LIST)
-        val filterPlanIds = baseDataEntity.takeIf { it != null }?.paramValue?.split(",")?.toSet() ?: emptySet()
+        val filterPlanIds = baseDataEntity?.paramValue?.split(",")?.toSet() ?: emptySet()
 
         val today = LocalDate.now()
 
         val summaryEntityList = tbsDaySummaryDao.findByDay(
             startDate = startDate ?: today.minusMonths(1).withDayOfMonth(1).toString(),
             endDate = endDate ?: today.withDayOfMonth(1).minusDays(1).toString(),
-            filterPlanIdNin = filterPlanIds
+            filterPlanIdNin = filterPlanIds,
+            pageNum = page,
+            pageSize = pageSizeNum
         )
         logger.info("summaryEntityList size: ${summaryEntityList.size}")
 
-        return summaryEntityList.map {
+        val resultList = summaryEntityList.map {
             with(it) {
                 MachineResourcesStatVO(
                     projectId = projectId!!,
@@ -56,5 +67,6 @@ class MachineResourcesService @Autowired constructor(
                 )
             }
         }
+        return Page(page + 1, pageSizeNum, 0, resultList)
     }
 }

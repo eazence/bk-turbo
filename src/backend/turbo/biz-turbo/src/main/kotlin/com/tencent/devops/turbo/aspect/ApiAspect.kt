@@ -27,6 +27,10 @@ class ApiAspect {
         val parameterNames = (joinPoint.signature as MethodSignature).parameterNames
         val parameterValues = joinPoint.args
 
+        parameterNames.forEachIndexed { idx, it ->
+            logger.info("name[$it], value[${parameterValues[idx]}]")
+        }
+
         var appCode: String? = null
         for (index in parameterValues.indices) {
             when (parameterNames[index]) {
@@ -35,7 +39,7 @@ class ApiAspect {
             }
         }
 
-        logger.info("appCode[$appCode]")
+        logger.info("check appCode[$appCode]")
         if (appCode.isNullOrBlank()) {
             throw TurboException(PERMISSION_DENIED, "user permission denied")
         }
