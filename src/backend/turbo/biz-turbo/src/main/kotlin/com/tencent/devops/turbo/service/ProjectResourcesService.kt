@@ -1,17 +1,19 @@
 package com.tencent.devops.turbo.service
 
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.util.MathUtil
 import com.tencent.devops.common.util.constants.BASE_EXCLUDED_PLAN_ID_LIST
+import com.tencent.devops.common.util.constants.BASE_EXCLUDED_PROJECT_ID_LIST
 import com.tencent.devops.turbo.dao.mongotemplate.TbsDaySummaryDao
 import com.tencent.devops.turbo.dao.repository.BaseDataRepository
-import com.tencent.devops.turbo.vo.apiwg.MachineResourcesStatVO
+import com.tencent.devops.turbo.vo.ProjectResourceUsageVO
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 @Service
-class MachineResourcesService @Autowired constructor(
+class ProjectResourcesService @Autowired constructor(
     private val tbsDaySummaryDao: TbsDaySummaryDao,
     private val baseDataRepository: BaseDataRepository
 ) {
@@ -28,7 +30,7 @@ class MachineResourcesService @Autowired constructor(
         endDate: String?,
         pageNum: Int?,
         pageSize: Int?
-    ): Page<MachineResourcesStatVO> {
+    ): Page<ProjectResourceUsageVO> {
         val page = pageNum?.takeIf { it > 0 }?.let { it - 1 } ?: 0
         val pageSizeNum = pageSize?.coerceAtMost(10000) ?: 100
 
@@ -36,30 +38,35 @@ class MachineResourcesService @Autowired constructor(
         val baseDataEntity = baseDataRepository.findFirstByParamCode(BASE_EXCLUDED_PLAN_ID_LIST)
         val filterPlanIds = baseDataEntity?.paramValue?.split(",")?.toSet() ?: emptySet()
 
+        // 获取需要过滤掉的项目id集合
+        val projectExcludedEntity = baseDataRepository.findFirstByParamCode(BASE_EXCLUDED_PROJECT_ID_LIST)
+        val filterProjectIds = projectExcludedEntity?.paramValue?.split(",")?.toSet() ?: emptySet()
+
         val today = LocalDate.now()
 
         val summaryEntityList = tbsDaySummaryDao.findByDay(
             startDate = startDate ?: today.minusMonths(1).withDayOfMonth(1).toString(),
             endDate = endDate ?: today.withDayOfMonth(1).minusDays(1).toString(),
             filterPlanIdNin = filterPlanIds,
+            filterProjectIdNin = filterProjectIds,
             pageNum = page,
             pageSize = pageSizeNum
         )
         logger.info("summaryEntityList size: ${summaryEntityList.size}")
 
-        val resultList = summaryEntityList.map {
+        val resultList = summaryEntityList.filter { !(it.projectId.isNullOrBlank()) }.map {
             with(it) {
-                MachineResourcesStatVO(
+                ProjectResourceUsageVO(
                     projectId = projectId!!,
                     projectName = projectName,
-                    planId = planId!!,
-                    planName = planName,
-                    planCreator = planCreator,
                     engineCode = engineCode,
-                    totalTimeWithCpu = totalTimeWithCpu,
+                    // 秒转分钟
+                    totalTimeWithCpu = MathUtil.secondsToMinutes(totalTimeWithCpu!!).toDouble(),
                     productId = productId,
                     bgName = bgName,
                     bgId = bgId,
+                    businessLineName = businessLineName,
+                    businessLineId = businessLineId,
                     deptName = deptName,
                     deptId = deptId,
                     centerName = centerName,
