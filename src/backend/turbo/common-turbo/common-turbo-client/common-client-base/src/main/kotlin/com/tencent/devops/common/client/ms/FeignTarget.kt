@@ -41,10 +41,10 @@ abstract class FeignTarget<T>(
     protected open val type: Class<T>,
     protected open val commonUrlPrefix: String,
     // key: serviceName, value: List<ServiceInstance>
-    protected val usedInstance: Cache<String, List<ServiceInstance>> = CacheBuilder.newBuilder()
+    protected val usedInstance: Cache<String, MutableList<ServiceInstance>> = CacheBuilder.newBuilder()
         .maximumSize(1000)
         .expireAfterWrite(3, TimeUnit.SECONDS)
-        .build<String, List<ServiceInstance>>()
+        .build<String, MutableList<ServiceInstance>>()
 ) : Target<T> {
 
     override fun apply(input: RequestTemplate?): Request {
