@@ -49,17 +49,16 @@ class KubernetesServiceTarget<T> constructor(
     }
 
     override fun choose(serviceName: String): ServiceInstance {
-        val serviceInstanceList: List<ServiceInstance> = usedInstance.getIfPresent(serviceName) ?: emptyList()
+        val serviceInstanceList: MutableList<ServiceInstance> = usedInstance.getIfPresent(serviceName) ?: mutableListOf()
 
         if (serviceInstanceList.isEmpty()) {
             val currentInstanceList = discoveryClient.getInstances(serviceName)
             if (currentInstanceList.isEmpty()) {
-                logger.error("Unable to find any valid [$serviceName] service provider")
-                throw ClientException(
-                     "Unable to find any valid [$serviceName] service provider"
-                )
+                val errMessage = "Unable to find any valid [$serviceName] service provider"
+                logger.error(errMessage)
+                throw ClientException(errMessage)
             }
-            serviceInstanceList.toMutableList().addAll(currentInstanceList)
+            serviceInstanceList.addAll(currentInstanceList)
             usedInstance.put(serviceName, serviceInstanceList)
         }
 

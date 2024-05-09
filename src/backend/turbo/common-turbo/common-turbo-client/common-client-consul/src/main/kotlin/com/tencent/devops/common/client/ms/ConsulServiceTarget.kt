@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.cloud.client.ServiceInstance
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.consul.discovery.ConsulServiceInstance
+import java.util.Random
 
 open class ConsulServiceTarget<T> constructor(
         override val serviceName: String,
@@ -50,34 +51,31 @@ open class ConsulServiceTarget<T> constructor(
     }
 
     override fun choose(serviceName: String): ServiceInstance {
-        val serviceInstanceList: List<ServiceInstance> = usedInstance.getIfPresent(serviceName) ?: emptyList()
+        val serviceInstanceList: MutableList<ServiceInstance> = usedInstance.getIfPresent(serviceName) ?: mutableListOf()
 
         if (serviceInstanceList.isEmpty()) {
             val currentInstanceList = discoveryClient.getInstances(serviceName)
+
             if (currentInstanceList.isEmpty()) {
-                logger.error("Unable to find any valid [$serviceName] service provider")
-                throw ClientException(
-                    "Unable to find any valid [$serviceName] service provider"
-                )
+                val errMsg = "Unable to find any valid [$serviceName] service provider"
+                logger.error(errMsg)
+                throw ClientException(errMsg)
             }
             currentInstanceList.forEach { serviceInstance ->
-                if (serviceInstance is ConsulServiceInstance && serviceInstance.tags.contains(tag)) {
-                    serviceInstanceList.toMutableList().add(serviceInstance)
+                if ((serviceInstance is ConsulServiceInstance) && serviceInstance.tags.contains(tag)) {
+                    serviceInstanceList.add(serviceInstance)
                 }
             }
 
             if (serviceInstanceList.isEmpty()) {
-                logger.error("Unable to find any valid [$serviceName] service provider")
-                throw ClientException(
-                    "Unable to find any valid [$serviceName] service provider"
-                )
+                val errMsg = "Unable to find any valid [$serviceName] service provider"
+                logger.error(errMsg)
+                throw ClientException(errMsg)
             } else {
                 usedInstance.put(serviceName, serviceInstanceList)
-                serviceInstanceList.toMutableList().shuffle()
             }
         }
-
-        return serviceInstanceList[0]
+        return serviceInstanceList[Random().nextInt(serviceInstanceList.size)]
     }
 
     override fun url(): String {
