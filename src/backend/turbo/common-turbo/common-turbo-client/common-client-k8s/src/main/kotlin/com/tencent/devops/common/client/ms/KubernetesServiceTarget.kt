@@ -62,8 +62,8 @@ class KubernetesServiceTarget<T> constructor(
             serviceInstanceList.addAll(currentInstanceList)
             logger.info("discoveryClient find serviceInst size: ${currentInstanceList.size}")
             usedInstance.put(serviceName, serviceInstanceList)
-            logger.info("usedInstance has $serviceName instance count: ${(usedInstance.getIfPresent(serviceName)
-                ?: emptyList()).size}")
+        } else {
+            logger.info(">>> get service for cache: $serviceName")
         }
 
         return serviceInstanceList[RandomUtils.nextInt(0, serviceInstanceList.size)]
