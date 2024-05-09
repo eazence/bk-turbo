@@ -43,7 +43,7 @@ abstract class FeignTarget<T>(
     // key: serviceName, value: List<ServiceInstance>
     protected val usedInstance: Cache<String, MutableList<ServiceInstance>> = CacheBuilder.newBuilder()
         .maximumSize(1000)
-        .expireAfterWrite(3, TimeUnit.SECONDS)
+        .expireAfterWrite(1, TimeUnit.MINUTES)
         .build<String, MutableList<ServiceInstance>>()
 ) : Target<T> {
 
