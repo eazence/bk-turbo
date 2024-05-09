@@ -28,6 +28,7 @@
 package com.tencent.devops.common.client.ms
 
 import com.tencent.devops.common.api.exception.ClientException
+import com.tencent.devops.common.util.JsonUtil
 import org.apache.commons.lang3.RandomUtils
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.client.ServiceInstance
@@ -49,6 +50,8 @@ class KubernetesServiceTarget<T> constructor(
     }
 
     override fun choose(serviceName: String): ServiceInstance {
+        logger.info("usedInstance has $serviceName instance count: ${(usedInstance.getIfPresent(serviceName) 
+            ?: emptyList()).size}")
         val serviceInstanceList: List<ServiceInstance> = usedInstance.getIfPresent(serviceName) ?: emptyList()
 
         if (serviceInstanceList.isEmpty()) {
@@ -60,6 +63,7 @@ class KubernetesServiceTarget<T> constructor(
                 )
             }
             serviceInstanceList.toMutableList().addAll(currentInstanceList)
+            logger.info("discoveryClient find serviceInst size: ${currentInstanceList.size}")
             usedInstance.put(serviceName, serviceInstanceList)
         }
 
