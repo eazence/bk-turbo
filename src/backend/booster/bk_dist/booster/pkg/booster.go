@@ -325,6 +325,10 @@ func (b *Booster) getWorkersEnv() map[string]string {
 		requiredEnv[env.KeyExecutorPumpLstatByDir] = envValueTrue
 	}
 
+	if b.config.Works.PumpCorrectCap {
+		requiredEnv[env.KeyExecutorPumpCorrectCap] = envValueTrue
+	}
+
 	if b.config.Works.IOTimeoutSecs > 0 {
 		requiredEnv[env.KeyExecutorIOTimeout] = strconv.Itoa(b.config.Works.IOTimeoutSecs)
 	}
@@ -339,6 +343,11 @@ func (b *Booster) getWorkersEnv() map[string]string {
 
 	if len(b.config.Works.ForceLocalList) > 0 {
 		requiredEnv[env.KeyExecutorForceLocalKeys] = strings.Join(b.config.Works.ForceLocalList, env.CommonBKEnvSepKey)
+	}
+
+	ccEnsureOwnerVal := env.GetEnv(env.KeyExecutorCCEnsureFileOwnerkey)
+	if ccEnsureOwnerVal != "" {
+		requiredEnv[env.KeyExecutorCCEnsureFileOwnerkey] = ccEnsureOwnerVal
 	}
 
 	if b.config.Works.WriteMemroy {

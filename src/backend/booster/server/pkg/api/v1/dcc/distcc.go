@@ -73,7 +73,11 @@ func ApplyResource(req *restful.Request, resp *restful.Response) {
 		Extra:         string(extraData),
 	})
 	if err != nil {
-		blog.Errorf("apply resource: create task failed, url(%s): %v", req.Request.URL.String(), err)
+		if err == engine.ErrorProjectNoFound {
+			blog.Warnf("apply resource: create task failed, url(%s): %v", req.Request.URL.String(), err)
+		} else {
+			blog.Errorf("apply resource: create task failed, url(%s): %v", req.Request.URL.String(), err)
+		}
 		api.ReturnRest(&api.RestResponse{Resp: resp, ErrCode: api.ServerErrApplyResourceFailed, Message: err.Error()})
 		return
 	}
@@ -306,12 +310,16 @@ func getTaskInfo(taskID string) (*commonTypes.DistccServerInfo, error) {
 		}
 	}
 
-	data, ok := te.CustomData(nil).(distcc.CustomData)
-	if !ok {
-		err = fmt.Errorf("custom data type error")
-		blog.Errorf("get apply param: get task(%s) custom data from engine(%s) failed: %v",
-			taskID, tb.Client.EngineName.String(), err)
-		return nil, err
+	data := distcc.CustomData{}
+	var ok bool
+	if te != nil {
+		data, ok = te.CustomData(nil).(distcc.CustomData)
+		if !ok {
+			err = fmt.Errorf("custom data type error")
+			blog.Errorf("get apply param: get task(%s) custom data from engine(%s) failed: %v",
+				taskID, tb.Client.EngineName.String(), err)
+			return nil, err
+		}
 	}
 
 	message := tb.Status.Message

@@ -83,6 +83,7 @@ const (
 	FlagPumpSearchLinkFile   = "pump_search_link_file"
 	FlagPumpSearchLinkDir    = "pump_search_link_dir"
 	FlagPumpLstatByDir       = "pump_lstat_by_dir"
+	FlagPumpCorrectCap       = "pump_correct_cap"
 	FlagForceLocalList       = "force_local_list"
 	FlagNoWork               = "no_work"
 	FlagControllerNoWait     = "controller_no_wait"
@@ -99,6 +100,7 @@ const (
 	FlagResIdleSecsForFree   = "res_idle_secs_for_free"
 	FlagSendCork             = "send_cork"
 	FlagSendFileMemoryLimit  = "send_file_memory_limit"
+	FlagSendMemoryCache      = "send_memory_cache"
 	FlagNetErrorLimit        = "net_error_limit"
 	FlagRemoteRetryTimes     = "remote_retry_times"
 	FlagEnableLink           = "enable_link"
@@ -106,6 +108,7 @@ const (
 	FlagLongTCP              = "long_tcp"
 	FlagUseDefaultWorker     = "use_default_worker"
 	FlagDynamicPort          = "dynamic_port"
+	FlagWorkerOfferSlot      = "worker_offer_slot"
 	FlagCleanTmpFilesDayAgo  = "clean_tmp_files_day_ago"
 
 	EnvBuildIDOld  = "TURBO_PLAN_BUILD_ID"
@@ -356,6 +359,10 @@ var (
 			Name:  "pump_lstat_by_dir",
 			Usage: "whether get file stat info by search dir",
 		},
+		commandCli.BoolFlag{
+			Name:  "pump_correct_cap",
+			Usage: "whether correct capitalization when save pump depend file list",
+		},
 		commandCli.StringSliceFlag{
 			Name:  "force_local_list, fll",
 			Usage: "key list which will be force executed locally",
@@ -420,6 +427,10 @@ var (
 			Name:  "send_file_memory_limit",
 			Usage: "set send file memory limit",
 		},
+		commandCli.BoolFlag{
+			Name:  "send_memory_cache",
+			Usage: "send files with memory cache",
+		},
 		commandCli.IntFlag{
 			Name:  "net_error_limit",
 			Usage: "disable a remote worker which's continuous net errors reach this limit",
@@ -447,6 +458,10 @@ var (
 		commandCli.BoolFlag{
 			Name:  "dynamic_port",
 			Usage: "controller will listen dynamic port if true",
+		},
+		commandCli.BoolFlag{
+			Name:  "worker_offer_slot",
+			Usage: "controller will get remote slot by worker offer",
 		},
 		commandCli.IntFlag{
 			Name:  "clean_tmp_files_day_ago",

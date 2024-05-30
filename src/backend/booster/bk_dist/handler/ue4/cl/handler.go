@@ -107,6 +107,9 @@ type TaskCL struct {
 	sourcedependfile string
 	pumpHeadFile     string
 	includeRspFiles  []string // 在rsp中通过@指定的其它rsp文件，需要发送到远端
+	// 在rsp中/I后面的参数，需要将这些目录全部发送到远端
+	// 有特殊场景：编译不需要该路径下的文件，但需要该路径作为跳板，去查找其它相对路径下的头文件（或其它依赖文件）
+	includePaths []string
 
 	// forcedepend 是我们主动导出依赖文件，showinclude 是编译命令已经指定了导出依赖文件
 	forcedepend          bool
@@ -253,7 +256,7 @@ func (cl *TaskCL) NeedRemoteResource(command []string) bool {
 
 // RemoteRetryTimes will return the remote retry times
 func (cl *TaskCL) RemoteRetryTimes() int {
-	return 0
+	return 1
 }
 
 // TODO : OnRemoteFail give chance to try other way if failed to remote execute
@@ -372,26 +375,27 @@ func (cl *TaskCL) analyzeIncludes(f string, workdir string) ([]*dcFile.Info, err
 	uniqlines := uniqArr(lines)
 	blog.Infof("cl: got %d uniq include file from file: %s", len(uniqlines), f)
 
-	if dcPump.SupportPumpStatCache(cl.sandbox.Env) {
-		return commonUtil.GetFileInfo(uniqlines, true, true, dcPump.SupportPumpLstatByDir(cl.sandbox.Env))
-	} else {
-		includes := []*dcFile.Info{}
-		for _, l := range uniqlines {
-			if !filepath.IsAbs(l) {
-				l, _ = filepath.Abs(filepath.Join(workdir, l))
-			}
-			fstat := dcFile.Stat(l)
-			if fstat.Exist() && !fstat.Basic().IsDir() {
-				includes = append(includes, fstat)
-			} else {
-				blog.Warnf("cl: do not deal include file: %s in file:%s for not existed or is dir", l, f)
-				// return fail if not existed
-				return nil, fmt.Errorf("%s not existed", f)
-			}
-		}
+	// if dcPump.SupportPumpStatCache(cl.sandbox.Env) {
+	// return commonUtil.GetFileInfo(uniqlines, true, true, dcPump.SupportPumpLstatByDir(cl.sandbox.Env))
+	return commonUtil.GetFileInfo(uniqlines, false, false, dcPump.SupportPumpLstatByDir(cl.sandbox.Env))
+	// } else {
+	// 	includes := []*dcFile.Info{}
+	// 	for _, l := range uniqlines {
+	// 		if !filepath.IsAbs(l) {
+	// 			l, _ = filepath.Abs(filepath.Join(workdir, l))
+	// 		}
+	// 		fstat := dcFile.Stat(l)
+	// 		if fstat.Exist() && !fstat.Basic().IsDir() {
+	// 			includes = append(includes, fstat)
+	// 		} else {
+	// 			blog.Warnf("cl: do not deal include file: %s in file:%s for not existed or is dir", l, f)
+	// 			// return fail if not existed
+	// 			return nil, fmt.Errorf("%s not existed", f)
+	// 		}
+	// 	}
 
-		return includes, nil
-	}
+	// 	return includes, nil
+	// }
 }
 
 func (cl *TaskCL) checkFstat(f string, workdir string) (*dcFile.Info, error) {
@@ -418,26 +422,27 @@ type sourceDependencies struct {
 	Data    sourceDependenciesData `json:"Data"`
 }
 
-func formatFilePath(f string) string {
-	f = strings.Replace(f, "/", "\\", -1)
+// func formatFilePath(f string) string {
+// 	f = strings.Replace(f, "/", "\\", -1)
+// 	f = strings.Replace(f, "\\\\", "\\", -1)
 
-	// 去掉路径中的..
-	if strings.Contains(f, "..") {
-		p := strings.Split(f, "\\")
+// 	// 去掉路径中的..
+// 	if strings.Contains(f, "..") {
+// 		p := strings.Split(f, "\\")
 
-		var newPath []string
-		for _, v := range p {
-			if v == ".." {
-				newPath = newPath[:len(newPath)-1]
-			} else {
-				newPath = append(newPath, v)
-			}
-		}
-		f = strings.Join(newPath, "\\")
-	}
+// 		var newPath []string
+// 		for _, v := range p {
+// 			if v == ".." {
+// 				newPath = newPath[:len(newPath)-1]
+// 			} else {
+// 				newPath = append(newPath, v)
+// 			}
+// 		}
+// 		f = strings.Join(newPath, "\\")
+// 	}
 
-	return f
-}
+// 	return f
+// }
 
 func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 	blog.Infof("cl: copy pump head file: %s to: %s", cl.sourcedependfile, cl.pumpHeadFile)
@@ -467,13 +472,13 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 			if !filepath.IsAbs(l) {
 				l, _ = filepath.Abs(filepath.Join(workdir, l))
 			}
-			includes = append(includes, formatFilePath(l))
+			includes = append(includes, commonUtil.FormatFilePath(l))
 
 			for _, l := range depend.Data.Includes {
 				if !filepath.IsAbs(l) {
 					l, _ = filepath.Abs(filepath.Join(workdir, l))
 				}
-				includes = append(includes, formatFilePath(l))
+				includes = append(includes, commonUtil.FormatFilePath(l))
 			}
 		} else {
 			blog.Warnf("cl: failed to resolve depend file: %s with err:%s", cl.sourcedependfile, err)
@@ -486,7 +491,7 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 			if !filepath.IsAbs(l) {
 				l, _ = filepath.Abs(filepath.Join(workdir, l))
 			}
-			includes = append(includes, formatFilePath(l))
+			includes = append(includes, commonUtil.FormatFilePath(l))
 		}
 	}
 
@@ -496,7 +501,7 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 		if !filepath.IsAbs(l) {
 			l, _ = filepath.Abs(filepath.Join(workdir, l))
 		}
-		includes = append(includes, formatFilePath(l))
+		includes = append(includes, commonUtil.FormatFilePath(l))
 	}
 
 	// copy includeRspFiles
@@ -506,7 +511,18 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 			if !filepath.IsAbs(l) {
 				l, _ = filepath.Abs(filepath.Join(workdir, l))
 			}
-			includes = append(includes, formatFilePath(l))
+			includes = append(includes, commonUtil.FormatFilePath(l))
+		}
+	}
+
+	// copy includePaths
+	if len(cl.includePaths) > 0 {
+		for _, l := range cl.includePaths {
+			blog.Infof("cl: ready add include path: %s", l)
+			if !filepath.IsAbs(l) {
+				l, _ = filepath.Abs(filepath.Join(workdir, l))
+			}
+			includes = append(includes, commonUtil.FormatFilePath(l))
 		}
 	}
 
@@ -521,6 +537,10 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 	// 	includes[i] = strings.Replace(includes[i], "/", "\\", -1)
 	// }
 	uniqlines := uniqArr(includes)
+
+	if dcPump.PumpCorrectCap(cl.sandbox.Env) {
+		uniqlines, _ = commonUtil.CorrectPathCap(uniqlines)
+	}
 
 	// TODO : save to cc.pumpHeadFile
 	newdata := strings.Join(uniqlines, sep)
@@ -781,6 +801,16 @@ func (cl *TaskCL) isPumpActionNumSatisfied() (bool, error) {
 	return int32(curbatchsize) > minnum, nil
 }
 
+func (cl *TaskCL) workerSupportAbsPath() bool {
+	v := cl.sandbox.Env.GetEnv(env.KeyWorkerSupportAbsPath)
+	if v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			return b
+		}
+	}
+	return true
+}
+
 func (cl *TaskCL) preExecute(command []string) (*dcSDK.BKDistCommand, error) {
 	blog.Infof("cl: start pre execute for: %v", command)
 
@@ -789,7 +819,7 @@ func (cl *TaskCL) preExecute(command []string) (*dcSDK.BKDistCommand, error) {
 	cl.originArgs = command
 
 	// ++ try with pump,only support windows now
-	if !cl.pumpremotefailed && dcPump.SupportPump(cl.sandbox.Env) {
+	if !cl.pumpremotefailed && dcPump.SupportPump(cl.sandbox.Env) && cl.workerSupportAbsPath() {
 		if satisfied, _ := cl.isPumpActionNumSatisfied(); satisfied {
 			req, err, notifyerr := cl.trypump(command)
 			if err != nil {
@@ -1079,6 +1109,7 @@ func (cl *TaskCL) preBuild(args []string) error {
 	cl.outputFile = scannedData.outputFile
 	cl.rewriteCrossArgs = cl.scannedArgs
 	cl.includeRspFiles = scannedData.includeRspFiles
+	cl.includePaths = scannedData.includePaths
 
 	// handle the pch options
 	finalArgs := cl.scanPchFile(cl.scannedArgs)

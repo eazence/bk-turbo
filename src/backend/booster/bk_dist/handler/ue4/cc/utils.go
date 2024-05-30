@@ -672,7 +672,9 @@ type ccArgs struct {
 	inputFile       string
 	outputFile      string
 	args            []string
-	includeRspFiles []string
+	includeRspFiles []string // with @ in response file
+	includePaths    []string // with -I
+	includeFiles    []string // with -include
 }
 
 // scanArgs receive the complete compiling args, and the first item should always be a compiler name.
@@ -804,6 +806,45 @@ func scanArgs(args []string) (*ccArgs, error) {
 				return nil, ErrorNotSupportFsanitize
 			}
 			// --
+
+			if strings.HasPrefix(arg, "-I") {
+				// if -I just a prefix, save the remain of this line.
+				if len(arg) > 2 {
+					r.includePaths = append(r.includePaths, strings.Trim(arg[2:], "\""))
+					continue
+				}
+
+				// if file name is in the next index, then take it.
+				index++
+				if index >= len(args) {
+					blog.Warnf("cc: scan args: no file found after -I")
+					return nil, ErrorMissingOption
+				}
+				r.includePaths = append(r.includePaths, strings.Trim(args[index], "\""))
+				continue
+			}
+
+			if strings.HasPrefix(arg, "-include") {
+				keylen := 8
+				if arg == "-include-pch" {
+					keylen = 12
+				}
+
+				// if -include just a prefix, save the remain of this line.
+				if len(arg) > keylen {
+					r.includeFiles = append(r.includeFiles, strings.Trim(arg[keylen:], "\""))
+					continue
+				}
+
+				// if file name is in the next index, then take it.
+				index++
+				if index >= len(args) {
+					blog.Warnf("cc: scan args: no file found after -include or -include-pch")
+					return nil, ErrorMissingOption
+				}
+				r.includeFiles = append(r.includeFiles, strings.Trim(args[index], "\""))
+				continue
+			}
 
 			if strings.HasPrefix(arg, "-o") {
 				// -o should always appear once.
@@ -1320,11 +1361,11 @@ func saveResultFile(rf *dcSDK.FileDesc, dir string) error {
 // in https://msdn.microsoft.com/en-us/library/ms880421.
 // This function returns "" (2 double quotes) if s is empty.
 // Alternatively, these transformations are done:
-// - every back slash (\) is doubled, but only if immediately
-//   followed by double quote (");
-// - every double quote (") is escaped by back slash (\);
-// - finally, s is wrapped with double quotes (arg -> "arg"),
-//   but only if there is space or tab inside s.
+//   - every back slash (\) is doubled, but only if immediately
+//     followed by double quote (");
+//   - every double quote (") is escaped by back slash (\);
+//   - finally, s is wrapped with double quotes (arg -> "arg"),
+//     but only if there is space or tab inside s.
 func EscapeArg(s string) string {
 	if len(s) == 0 {
 		return "\"\""
@@ -1553,4 +1594,113 @@ func getIncludeLinks(env *env.Sandbox, uniqlines []string) ([]string, error) {
 
 	return nil, nil
 
+}
+
+// scanRspFiles 类似scanArgs，递归解析包含的rsp文件，得到依赖列表，包括路径/文件/新的rsp列表
+func scanRspFilesRecursively(
+	newrspfile string,
+	workdir string,
+	resultIncludePaths *[]string,
+	resultIncludeFiles *[]string,
+	checkedRspFiles *[]string) {
+	blog.Infof("cc: ready resolve recursively rsp file: %s", newrspfile)
+
+	for _, f := range *checkedRspFiles {
+		if f == newrspfile {
+			blog.Errorf("cc: found dead loop include response file %s", newrspfile)
+			return
+		}
+	}
+
+	*checkedRspFiles = append(*checkedRspFiles, newrspfile)
+
+	if !filepath.IsAbs(newrspfile) {
+		newrspfile, _ = filepath.Abs(filepath.Join(workdir, newrspfile))
+	}
+
+	blog.Infof("cc: ready resolve recursively rsp file with full path: %s", newrspfile)
+
+	data := ""
+	var err error
+	data, err = readResponse(newrspfile, workdir)
+	if err != nil {
+		blog.Infof("cc: failed to read response file:%s,err:%v", newrspfile, err)
+		return
+	}
+
+	// options, sources, err := parseArgument(data)
+	args, err := shlex.Split(replaceWithNextExclude(string(data), '\\', "\\\\", []byte{'"'}))
+	if err != nil {
+		blog.Infof("cc: failed to parse response file:%s,err:%v", newrspfile, err)
+		return
+	}
+
+	// for debug
+	blog.Infof("cc: response file:%s,args:%+v", newrspfile, args)
+
+	// 只关心包含的依赖，其它选项忽略
+	for index := 0; index < len(args); index++ {
+		arg := args[index]
+		if strings.HasPrefix(arg, "-") {
+			if strings.HasPrefix(arg, "-I") {
+				// if -I just a prefix, save the remain of this line.
+				if len(arg) > 2 {
+					*resultIncludePaths = append(*resultIncludePaths, strings.Trim(arg[2:], "\""))
+					// for debug
+					blog.Debugf("cc: response file:%s,got include path:%s", newrspfile, strings.Trim(arg[2:], "\""))
+					continue
+				}
+
+				// if file name is in the next index, then take it.
+				index++
+				if index >= len(args) {
+					blog.Warnf("cc: scan args: no file found after -I")
+					return
+				}
+				*resultIncludePaths = append(*resultIncludePaths, strings.Trim(args[index], "\""))
+				// for debug
+				blog.Debugf("cc: response file:%s,got include path:%s", newrspfile, strings.Trim(args[index], "\""))
+				continue
+			}
+
+			if strings.HasPrefix(arg, "-include") {
+				keylen := 8
+				if arg == "-include-pch" {
+					keylen = 12
+				}
+
+				// if -include just a prefix, save the remain of this line.
+				if len(arg) > keylen {
+					*resultIncludeFiles = append(*resultIncludeFiles, strings.Trim(arg[keylen:], "\""))
+					// for debug
+					blog.Debugf("cc: response file:%s,got include file:%s", newrspfile, strings.Trim(arg[keylen:], "\""))
+					continue
+				}
+
+				// if file name is in the next index, then take it.
+				index++
+				if index >= len(args) {
+					blog.Warnf("cc: scan args: no file found after -include or -include-pch")
+					return
+				}
+				*resultIncludeFiles = append(*resultIncludeFiles, strings.Trim(args[index], "\""))
+				// for debug
+				blog.Debugf("cc: response file:%s,got include file:%s", newrspfile, strings.Trim(args[index], "\""))
+				continue
+			}
+			continue
+		} else if strings.HasPrefix(arg, "@") {
+			// 递归调用
+			scanRspFilesRecursively(
+				arg[1:],
+				workdir,
+				resultIncludePaths,
+				resultIncludeFiles,
+				checkedRspFiles)
+		}
+	}
+
+	// for debug
+	blog.Debugf("cc: response file:%s,resultIncludePaths:%+v,resultIncludeFiles:%+v",
+		newrspfile, *resultIncludePaths, *resultIncludeFiles)
 }
