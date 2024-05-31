@@ -199,9 +199,10 @@ class ProjectResourcesService @Autowired constructor(
             }
             if (data.isNotEmpty()) {
                 logger.info("upload $kind by page: ${pageNum + 1}, size: ${data.size}")
-                val uploadResult = TodCostApi.uploadByPage(month = month, data)
-                if (uploadResult) {
-                    logger.warn("upload $kind failed!!")
+                val uploadSuccess = TodCostApi.postData(month = month, data)
+                if (!uploadSuccess) {
+                    logger.error("upload $kind failed!!")
+                    break
                 }
             }
             pageNum++
@@ -213,6 +214,6 @@ class ProjectResourcesService @Autowired constructor(
      * 手动上报指定的数据
      */
     fun manualUploadCostData(summary: ResourceCostSummary): Boolean {
-        return TodCostApi.uploadByPage(summary.month, summary.bills)
+        return TodCostApi.postData(summary.month, summary.bills)
     }
 }
