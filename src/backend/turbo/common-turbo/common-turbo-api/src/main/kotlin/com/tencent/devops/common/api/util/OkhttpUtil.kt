@@ -124,6 +124,7 @@ object OkhttpUtil {
     }
 
     fun doHttpPost(url: String, jsonBody: String, headers: Map<String, String> = mapOf()): String {
+        logger.info("url: $url, jsonBody: $jsonBody")
         return executeRequest(method = HttpMethod.POST, url = url, body = jsonBody, headers = headers)
     }
 

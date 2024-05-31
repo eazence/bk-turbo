@@ -3,6 +3,7 @@ package com.tencent.devops.turbo.service
 import com.tencent.devops.common.api.exception.TurboException
 import com.tencent.devops.common.api.exception.code.TURBO_PARAM_INVALID
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.util.JsonUtil
 import com.tencent.devops.common.util.MathUtil
 import com.tencent.devops.common.util.constants.BASE_EXCLUDED_PLAN_ID_LIST
 import com.tencent.devops.common.util.constants.BASE_EXCLUDED_PROJECT_ID_LIST
@@ -119,6 +120,7 @@ class ProjectResourcesService @Autowired constructor(
         val filterPlanIds = getFilterIds(BASE_EXCLUDED_PLAN_ID_LIST)
         val filterProjectIds = getFilterIds(BASE_EXCLUDED_PROJECT_ID_LIST)
         val properties = SpringContextHolder.getBean<TodCostProperties>()
+        logger.info("TodCostProperties: ${JsonUtil.toJson(properties)}")
 
         this.uploadDataByType(
             start = start.toString(),
@@ -197,7 +199,10 @@ class ProjectResourcesService @Autowired constructor(
             }
             if (data.isNotEmpty()) {
                 logger.info("upload $kind by page: ${pageNum + 1}, size: ${data.size}")
-                TodCostApi.uploadByPage(month = month, data)
+                val uploadResult = TodCostApi.uploadByPage(month = month, data)
+                if (uploadResult) {
+                    logger.warn("upload $kind failed!!")
+                }
             }
             pageNum++
         } while (entityList.size == UPLOAD_PAGE_SIZE)
