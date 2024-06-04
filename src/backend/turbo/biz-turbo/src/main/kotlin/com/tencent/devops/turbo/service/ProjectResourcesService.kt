@@ -214,6 +214,7 @@ class ProjectResourcesService @Autowired constructor(
      * 手动上报指定的数据
      */
     fun manualUploadCostData(summary: ResourceCostSummary): Boolean {
-        return TodCostApi.postData(summary.month, summary.bills)
+        logger.info("manualUploadCostData: ${JsonUtil.toJson(summary)}")
+        return TodCostApi.upload(body = summary)
     }
 }
