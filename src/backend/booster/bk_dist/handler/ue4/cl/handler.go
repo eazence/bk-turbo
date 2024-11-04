@@ -223,6 +223,14 @@ func (cl *TaskCL) getPreLoadConfigPath(config dcType.BoosterConfig) string {
 	return dcConfig.GetFile(hookConfigPathCCCommon)
 }
 
+func (cl *TaskCL) CanExecuteWithLocalIdleResource(command []string) bool {
+	if cl.sandbox.Env.GetEnv(env.KeyExecutorUECLNotUseLocal) == "true" {
+		return false
+	}
+
+	return true
+}
+
 // PreExecuteNeedLock 防止预处理跑满本机CPU
 func (cl *TaskCL) PreExecuteNeedLock(command []string) bool {
 	return true
@@ -280,6 +288,14 @@ func (cl *TaskCL) OnRemoteFail(command []string) (*dcSDK.BKDistCommand, dcType.B
 
 // LocalLockWeight decide local-execute lock weight, default 1
 func (cl *TaskCL) LocalLockWeight(command []string) int32 {
+	envvalue := cl.sandbox.Env.GetEnv(env.KeyExecutorUECLLocalCPUWeight)
+	if envvalue != "" {
+		w, err := strconv.Atoi(envvalue)
+		if err == nil && w > 0 && w <= runtime.NumCPU() {
+			return int32(w)
+		}
+	}
+
 	return 1
 }
 
@@ -323,13 +339,14 @@ func (cl *TaskCL) FinalExecute(args []string) {
 
 // GetFilterRules add file send filter
 func (cl *TaskCL) GetFilterRules() ([]dcSDK.FilterRuleItem, error) {
-	return []dcSDK.FilterRuleItem{
-		{
-			Rule:     dcSDK.FilterRuleFileSuffix,
-			Operator: dcSDK.FilterRuleOperatorEqual,
-			Standard: ".pch",
-		},
-	}, nil
+	// return []dcSDK.FilterRuleItem{
+	// 	{
+	// 		Rule:     dcSDK.FilterRuleFileSuffix,
+	// 		Operator: dcSDK.FilterRuleOperatorEqual,
+	// 		Standard: ".pch",
+	// 	},
+	// }, nil
+	return nil, nil
 }
 
 func (cl *TaskCL) getIncludeExe() (string, error) {
@@ -380,12 +397,12 @@ func (cl *TaskCL) analyzeIncludes(f string, workdir string) ([]*dcFile.Info, err
 	}
 
 	lines := strings.Split(string(data), "\r\n")
-	uniqlines := commonUtil.UniqArr(lines)
+	uniqlines := dcUtil.UniqArr(lines)
 	blog.Infof("cl: got %d uniq include file from file: %s", len(uniqlines), f)
 
 	// if dcPump.SupportPumpStatCache(cl.sandbox.Env) {
 	// return commonUtil.GetFileInfo(uniqlines, true, true, dcPump.SupportPumpLstatByDir(cl.sandbox.Env))
-	return commonUtil.GetFileInfo(uniqlines, false, false, dcPump.SupportPumpLstatByDir(cl.sandbox.Env))
+	return dcFile.GetFileInfo(uniqlines, false, false, dcPump.SupportPumpLstatByDir(cl.sandbox.Env))
 	// } else {
 	// 	includes := []*dcFile.Info{}
 	// 	for _, l := range uniqlines {
@@ -480,16 +497,16 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 			if !filepath.IsAbs(l) {
 				l, _ = filepath.Abs(filepath.Join(workdir, l))
 			}
-			includes = append(includes, commonUtil.FormatFilePath(l))
+			includes = append(includes, dcUtil.FormatFilePath(l))
 
 			for _, l := range depend.Data.Includes {
 				if !filepath.IsAbs(l) {
 					l, _ = filepath.Abs(filepath.Join(workdir, l))
 				}
-				includes = append(includes, commonUtil.FormatFilePath(l))
+				includes = append(includes, dcUtil.FormatFilePath(l))
 
 				// 如果是链接，则将相关指向的文件都包含进来
-				fs := commonUtil.GetAllLinkFiles(l)
+				fs := dcUtil.GetAllLinkFiles(l)
 				if len(fs) > 0 {
 					includes = append(includes, fs...)
 				}
@@ -505,10 +522,10 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 			if !filepath.IsAbs(l) {
 				l, _ = filepath.Abs(filepath.Join(workdir, l))
 			}
-			includes = append(includes, commonUtil.FormatFilePath(l))
+			includes = append(includes, dcUtil.FormatFilePath(l))
 
 			// 如果是链接，则将相关指向的文件都包含进来
-			fs := commonUtil.GetAllLinkFiles(l)
+			fs := dcUtil.GetAllLinkFiles(l)
 			if len(fs) > 0 {
 				includes = append(includes, fs...)
 			}
@@ -521,7 +538,7 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 		if !filepath.IsAbs(l) {
 			l, _ = filepath.Abs(filepath.Join(workdir, l))
 		}
-		includes = append(includes, commonUtil.FormatFilePath(l))
+		includes = append(includes, dcUtil.FormatFilePath(l))
 	}
 
 	// copy includeRspFiles
@@ -531,7 +548,7 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 			if !filepath.IsAbs(l) {
 				l, _ = filepath.Abs(filepath.Join(workdir, l))
 			}
-			includes = append(includes, commonUtil.FormatFilePath(l))
+			includes = append(includes, dcUtil.FormatFilePath(l))
 		}
 	}
 
@@ -542,7 +559,7 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 			if !filepath.IsAbs(l) {
 				l, _ = filepath.Abs(filepath.Join(workdir, l))
 			}
-			includes = append(includes, commonUtil.FormatFilePath(l))
+			includes = append(includes, dcUtil.FormatFilePath(l))
 		}
 	}
 
@@ -556,10 +573,10 @@ func (cl *TaskCL) copyPumpHeadFile(workdir string) error {
 	// for i := range includes {
 	// 	includes[i] = strings.Replace(includes[i], "/", "\\", -1)
 	// }
-	uniqlines := commonUtil.UniqArr(includes)
+	uniqlines := dcUtil.UniqArr(includes)
 
 	if dcPump.PumpCorrectCap(cl.sandbox.Env) {
-		uniqlines, _ = commonUtil.CorrectPathCap(uniqlines)
+		uniqlines, _ = dcUtil.CorrectPathCap(uniqlines)
 	}
 
 	// TODO : save to cc.pumpHeadFile
@@ -703,8 +720,6 @@ func (cl *TaskCL) trypump(command []string) (*dcSDK.BKDistCommand, error, error)
 	tstart = tend
 
 	if err == nil {
-		blog.Infof("cl: parse command,got total %d includes files", len(includes))
-
 		// add pch file as input
 		if pchfile != "" {
 			// includes = append(includes, pchfile)
@@ -722,6 +737,10 @@ func (cl *TaskCL) trypump(command []string) (*dcSDK.BKDistCommand, error, error)
 				includes = append(includes, finfo)
 			}
 		}
+
+		oldlen := len(includes)
+		includes = dcFile.Uniq(includes)
+		blog.Infof("cc: parse command,got total %d uniq %d includes files", oldlen, len(includes))
 
 		inputFiles := []dcSDK.FileDesc{}
 		// priority := dcSDK.MaxFileDescPriority
@@ -744,7 +763,7 @@ func (cl *TaskCL) trypump(command []string) (*dcSDK.BKDistCommand, error, error)
 				Filemode:           fileMode,
 				Targetrelativepath: filepath.Dir(fpath),
 				NoDuplicated:       true,
-				Priority:           commonUtil.GetPriority(f),
+				Priority:           dcSDK.GetPriority(f),
 			})
 			// priority++
 
@@ -1071,7 +1090,7 @@ func (cl *TaskCL) postExecute(r *dcSDK.BKDistResult) dcType.BKDistCommonError {
 			}
 		} else {
 			// simulate output with inputFile
-			r.Results[0].OutputMessage = []byte(filepath.Base(cl.inputFile))
+			// r.Results[0].OutputMessage = []byte(filepath.Base(cl.inputFile))
 		}
 
 		// if remote succeed with pump,do not need copy head file

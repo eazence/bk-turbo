@@ -69,6 +69,10 @@ func (cc *WinClangCl) RenderArgs(config dcType.BoosterConfig, originArgs string)
 	return originArgs
 }
 
+func (cc *WinClangCl) CanExecuteWithLocalIdleResource(command []string) bool {
+	return true
+}
+
 func (cc *WinClangCl) PreExecuteNeedLock(command []string) bool {
 
 	return true
@@ -178,14 +182,15 @@ func (cc *WinClangCl) FinalExecute(args []string) {
 
 // GetFilterRules add file send filter
 func (cc *WinClangCl) GetFilterRules() ([]dcSDK.FilterRuleItem, error) {
-	return []dcSDK.FilterRuleItem{
-		{
-			Rule:       dcSDK.FilterRuleFileSuffix,
-			Operator:   dcSDK.FilterRuleOperatorEqual,
-			Standard:   ".gch",
-			HandleType: dcSDK.FilterRuleHandleAllDistribution,
-		},
-	}, nil
+	// return []dcSDK.FilterRuleItem{
+	// 	{
+	// 		Rule:       dcSDK.FilterRuleFileSuffix,
+	// 		Operator:   dcSDK.FilterRuleOperatorEqual,
+	// 		Standard:   ".gch",
+	// 		HandleType: dcSDK.FilterRuleHandleAllDistribution,
+	// 	},
+	// }, nil
+	return nil, nil
 }
 
 func (cc *WinClangCl) GetPreloadConfig(config dcType.BoosterConfig) (*dcSDK.PreloadConfig, error) {

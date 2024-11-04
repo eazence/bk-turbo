@@ -321,7 +321,7 @@ func (e *executor) realExecuteLocalTask(locallockweight int32) *types.LocalTaskE
 		var outBuf, errBuf bytes.Buffer
 		sandbox.Stdout = &outBuf
 		sandbox.Stderr = &errBuf
-		blog.Infof("executor:ready run cmd:%v", e.req.Commands)
+		blog.Infof("executor: ready from pid(%d) run cmd:%v", e.req.Pid, e.req.Commands)
 		cmd := e.req.Commands[0]
 		if strings.HasSuffix(cmd, "cmd.exe") || strings.HasSuffix(cmd, "Cmd.exe") {
 			arg := strings.Join(e.req.Commands, " ")
@@ -361,7 +361,7 @@ func (e *executor) tryExecuteLocalTask() *types.LocalTaskExecuteResult {
 	defer e.mgr.work.Basic().UpdateJobStats(e.stats)
 
 	dcSDK.StatsTimeNow(&e.stats.LocalWorkEnterTime)
-	gotLock := true
+	gotLock := false
 	defer func() {
 		if gotLock {
 			dcSDK.StatsTimeNow(&e.stats.LocalWorkLeaveTime)
@@ -392,6 +392,8 @@ func (e *executor) tryExecuteLocalTask() *types.LocalTaskExecuteResult {
 		gotLock = false
 		blog.Infof("executor: not got lock to execute local-task from pid(%d) with weight %d", e.req.Pid, locallockweight)
 		return nil
+	} else {
+		gotLock = true
 	}
 
 	return e.realExecuteLocalTask(locallockweight)
@@ -519,6 +521,14 @@ func (e *executor) retryAndSuccessTooManyAndDegradeDirectly() bool {
 			retryAndSuccessLimit, e.req.Commands)
 		e.stats.RemoteWorkOftenRetryAndDegraded = true
 		return true
+	}
+
+	return false
+}
+
+func (e *executor) canExecuteWithLocalIdleResource() bool {
+	if e.handler != nil {
+		return e.handler.CanExecuteWithLocalIdleResource(e.req.Commands)
 	}
 
 	return false

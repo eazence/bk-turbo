@@ -90,6 +90,14 @@ func (cf *TaskCLFilter) GetPreloadConfig(config dcType.BoosterConfig) (*dcSDK.Pr
 	return nil, nil
 }
 
+func (cf *TaskCLFilter) CanExecuteWithLocalIdleResource(command []string) bool {
+	if cf.clhandle != nil {
+		return cf.clhandle.CanExecuteWithLocalIdleResource(command)
+	}
+
+	return true
+}
+
 // PreExecuteNeedLock 防止预处理跑满本机CPU
 func (cf *TaskCLFilter) PreExecuteNeedLock(command []string) bool {
 	return true
@@ -179,13 +187,14 @@ func (cf *TaskCLFilter) FinalExecute(args []string) {
 
 // GetFilterRules add file send filter
 func (cf *TaskCLFilter) GetFilterRules() ([]dcSDK.FilterRuleItem, error) {
-	return []dcSDK.FilterRuleItem{
-		{
-			Rule:     dcSDK.FilterRuleFileSuffix,
-			Operator: dcSDK.FilterRuleOperatorEqual,
-			Standard: ".pch",
-		},
-	}, nil
+	// return []dcSDK.FilterRuleItem{
+	// 	{
+	// 		Rule:     dcSDK.FilterRuleFileSuffix,
+	// 		Operator: dcSDK.FilterRuleOperatorEqual,
+	// 		Standard: ".pch",
+	// 	},
+	// }, nil
+	return nil, nil
 }
 
 func (cf *TaskCLFilter) preExecute(command []string) (*dcSDK.BKDistCommand, dcType.BKDistCommonError) {

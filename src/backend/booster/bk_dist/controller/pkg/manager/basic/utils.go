@@ -267,13 +267,22 @@ func searchCC(exe string) []string {
 }
 
 func searchAS(exe string) []string {
-	cmd := "which as"
+	cmd := fmt.Sprintf("%s -print-prog-name=as", exe)
 	blog.Infof("basic: ready run cmd:[%s] for exe:%s", cmd, exe)
 	sandbox := dcSyscall.Sandbox{}
 	_, out, _, err := sandbox.ExecScriptsWithMessage(cmd)
-	if err != nil {
+	// 出错，或者只返回了as(没有完整路径，需要从系统得到)
+	if err != nil || strings.TrimSpace(string(out)) == "as" {
 		blog.Warnf("basic: search as with out:%s,error:%+v", out, err)
-		return nil
+
+		cmd = "which as"
+		blog.Infof("basic: ready run cmd:[%s] for exe:%s", cmd, exe)
+		sandbox = dcSyscall.Sandbox{}
+		_, out, _, err = sandbox.ExecScriptsWithMessage(cmd)
+		if err != nil {
+			blog.Warnf("basic: search as with out:%s,error:%+v", out, err)
+			return nil
+		}
 	}
 
 	blog.Infof("basic: got output:[%s] for cmd:[%s]", out, cmd)
@@ -400,6 +409,15 @@ func searchGcc(cmd string) (*types.ToolChain, error) {
 		}
 	}
 
+	// search default dir
+	fs = searchDefaultIncludeDirs(cmd)
+	for _, i := range fs {
+		t.Files = append(t.Files, dcSDK.ToolFile{
+			LocalFullPath:      i,
+			RemoteRelativePath: filepath.Dir(i),
+		})
+	}
+
 	blog.Infof("basic: got gcc/g++ toolchian:%+v", *t)
 	return t, nil
 }
@@ -516,8 +534,57 @@ func searchClang(cmd string) (*types.ToolChain, error) {
 		}
 	}
 
+	// search default dir
+	fs = searchDefaultIncludeDirs(cmd)
+	for _, i := range fs {
+		t.Files = append(t.Files, dcSDK.ToolFile{
+			LocalFullPath:      i,
+			RemoteRelativePath: filepath.Dir(i),
+		})
+	}
+
 	blog.Infof("basic: got clang/clang++ toolchian:%+v", *t)
 	return t, nil
+}
+
+// search default dirs
+func searchDefaultIncludeDirs(exe string) []string {
+	cmd := fmt.Sprintf("%s -v -x c++ -E /dev/null", exe)
+	blog.Infof("basic: ready run cmd:[%s]", cmd)
+	sandbox := dcSyscall.Sandbox{}
+	_, out, errmsg, err := sandbox.ExecScriptsWithMessage(cmd)
+	if err != nil {
+		blog.Warnf("basic: search default dir with out:%s,error:%+v", out, err)
+		return nil
+	}
+	blog.Infof("basic: got output:[%s] errmsg:[%s] for cmd:[%s]", out, errmsg, cmd)
+
+	// resolve output message
+	startkey := "search starts here:"
+	started := false
+	endkey := "End of search list."
+	lines := strings.Split(string(errmsg), "\n")
+	defaultdir := []string{}
+	for _, l := range lines {
+		blog.Infof("basic: check line:[%s]", l)
+		if strings.Contains(l, startkey) {
+			started = true
+			continue
+		}
+
+		if strings.Contains(l, endkey) {
+			break
+		}
+
+		if !started {
+			continue
+		}
+
+		// 需要记录的目录
+		defaultdir = append(defaultdir, dcUtil.FormatFilePath(strings.TrimSpace(l)))
+	}
+
+	return defaultdir
 }
 
 // --------------------to search toolchain--------------------
