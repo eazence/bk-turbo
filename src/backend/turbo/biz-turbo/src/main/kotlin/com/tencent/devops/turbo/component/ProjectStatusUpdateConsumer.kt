@@ -20,18 +20,18 @@ class ProjectStatusUpdateConsumer @Autowired constructor(
         private val logger = LoggerFactory.getLogger(this::class.java)
     }
 
-    fun consumer(eventStr: String) {
+    fun consumer(event: LinkedHashMap<Any, Any>) {
         try {
-            logger.info("ProjectStatusUpdateConsumer received: $eventStr")
-            val event = JsonUtil.to(eventStr, object : TypeReference<ProjectEnableStatusBroadCastEvent>(){})
-
-            with(event) {
-                turboPlanService.updatePlanStatusByBkProjectStatus(
-                    userId = userId,
-                    projectId = projectId,
-                    enabled = enabled
-                )
-            }
+            logger.info("ProjectStatusUpdateConsumer received: $event")
+//            val event = JsonUtil.to(eventStr, object : TypeReference<ProjectEnableStatusBroadCastEvent>(){})
+//
+//            with(event) {
+//                turboPlanService.updatePlanStatusByBkProjectStatus(
+//                    userId = userId,
+//                    projectId = projectId,
+//                    enabled = enabled
+//                )
+//            }
         } catch (e: Exception) {
             logger.error("batch update turbo plan status failed: ${e.message}", e)
         }
