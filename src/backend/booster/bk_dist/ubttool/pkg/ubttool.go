@@ -24,7 +24,6 @@ import (
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/bk_dist/booster/pkg"
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/bk_dist/common/env"
 	dcFile "github.com/TencentBlueKing/bk-turbo/src/backend/booster/bk_dist/common/file"
-	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/bk_dist/common/sdk"
 	dcSDK "github.com/TencentBlueKing/bk-turbo/src/backend/booster/bk_dist/common/sdk"
 	dcType "github.com/TencentBlueKing/bk-turbo/src/backend/booster/bk_dist/common/types"
 	dcUtil "github.com/TencentBlueKing/bk-turbo/src/backend/booster/bk_dist/common/util"
@@ -296,7 +295,9 @@ func (h *UBTTool) analyzeActions(actions []common.Action) error {
 		targetsuffix := []string{}
 		needAnalyzeArg := true
 		switch exe {
-		case "cl.exe", "cl-filter.exe", "clang.exe", "clang++.exe", "clang", "clang++":
+		case "cl.exe", "cl-filter.exe", "clang.exe",
+			"clang++.exe", "clang", "clang++",
+			"prospero-clang.exe", "clang-cl.exe":
 			targetsuffix = []string{".cpp", ".c", ".response\"", ".response"}
 			actions[i].IsCompile = true
 			break
@@ -425,9 +426,13 @@ func (h *UBTTool) executeOneAction(action common.Action, actionchan chan common.
 
 	blog.Infof("UBTTool: raw cmd:[%s %s]", action.Cmd, action.Arg)
 
+	commandType := dcType.CommandDefault
 	fullargs := []string{action.Cmd}
-	if strings.HasSuffix(action.Cmd, "cmd.exe") || strings.HasSuffix(action.Cmd, "Cmd.exe") || strings.HasSuffix(action.Cmd, "ispc.exe") || strings.HasSuffix(action.Cmd, "Ispc.exe") {
+	if strings.HasSuffix(action.Cmd, "cmd.exe") || strings.HasSuffix(action.Cmd, "Cmd.exe") {
 		fullargs = append(fullargs, action.Arg)
+	} else if (strings.HasSuffix(action.Cmd, "ispc.exe") || strings.HasSuffix(action.Cmd, "Ispc.exe")) && len(action.Arg) > dcType.MaxWindowsCommandLength {
+		fullargs = append(fullargs, action.Arg)
+		commandType = dcType.CommandInFile
 	} else {
 		args, _ := shlex.Split(replaceWithNextExclude(action.Arg, '\\', "\\\\", []byte{'"'}))
 		fullargs = append(fullargs, args...)
@@ -442,7 +447,7 @@ func (h *UBTTool) executeOneAction(action common.Action, actionchan chan common.
 	waitsecs := 5
 	var err error
 	for try := 0; try < 3; try++ {
-		retcode, retmsg, err = h.executor.Run(fullargs, action.Workdir)
+		retcode, retmsg, err = h.executor.Run(fullargs, action.Workdir, commandType)
 		if retcode != int(api.ServerErrOK) {
 			blog.Warnf("UBTTool: failed to execute action with ret code:%d error [%+v] for %d times, actions:%+v", retcode, err, try+1, action)
 
@@ -724,7 +729,7 @@ func (h *UBTTool) newBooster() (*pkg.Booster, error) {
 		},
 
 		// got controller listen port from local file
-		Controller: sdk.ControllerConfig{
+		Controller: dcSDK.ControllerConfig{
 			NoLocal: false,
 			Scheme:  shaderToolComm.ControllerScheme,
 			IP:      shaderToolComm.ControllerIP,
