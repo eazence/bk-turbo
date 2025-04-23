@@ -53,6 +53,7 @@ allprojects {
             dependency("com.tencent.bk.devops.ci.auth:api-auth:${Versions.ciVersion}")
             dependency("com.tencent.bk.devops.ci.common:common-auth-api:${Versions.ciVersion}")
             dependency("com.tencent.bk.devops.ci.project:api-project:${Versions.ciVersion}")
+            dependency("com.tencent.bk.devops.ci.metrics:api-metrics:${Versions.ciVersion}")
 			dependencySet("io.swagger:${Versions.swaggerVersion}") {
                 entry("swagger-annotations")
                 entry("swagger-jersey2-jaxrs")

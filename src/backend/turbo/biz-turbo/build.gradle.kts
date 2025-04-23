@@ -14,4 +14,7 @@ dependencies {
     api("com.tencent.bk.devops.ci.project:api-project") {
         isTransitive = false
     }
+    api("com.tencent.bk.devops.ci.metrics:api-metrics") {
+        isTransitive = false
+    }
 }
