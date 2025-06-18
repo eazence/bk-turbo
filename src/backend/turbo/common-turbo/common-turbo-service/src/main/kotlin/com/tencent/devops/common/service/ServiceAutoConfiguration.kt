@@ -2,6 +2,7 @@ package com.tencent.devops.common.service
 
 import com.tencent.devops.common.service.prometheus.BkTimedAspect
 import com.tencent.devops.common.service.utils.SpringContextUtil
+import com.tencent.devops.common.service.utils.TenantUtil
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureOrder
@@ -33,5 +34,6 @@ class ServiceAutoConfiguration {
     @Bean
     fun springContextUtil() = SpringContextUtil()
 
-
+    @Bean
+    fun tenantUtils() = TenantUtil()
 }
