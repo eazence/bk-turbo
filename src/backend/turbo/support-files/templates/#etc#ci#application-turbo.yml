@@ -39,3 +39,6 @@ tbs:
 
 devops:
   rootpath: __BK_CI_PUBLIC_URL__
+  
+bk:
+  enableMultiTenantMode: __BK_TENANT_ENABLED__

@@ -2,6 +2,7 @@ package com.tencent.devops.turbo.api
 
 import com.tencent.devops.api.pojo.Response
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.util.constants.AUTH_HEADER_BK_TENANT_ID
 import com.tencent.devops.common.util.constants.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.util.constants.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.turbo.pojo.TurboPlanModel
@@ -46,7 +47,10 @@ interface IUserTurboPlanController {
         projectId: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<String?>
 
     @ApiOperation("加速方案-详情页,获取方案详情信息")
@@ -63,7 +67,10 @@ interface IUserTurboPlanController {
         projectId: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<TurboPlanDetailVO>
 
     @ApiOperation("加速方案-列表页,获取方案清单数据")
@@ -83,7 +90,10 @@ interface IUserTurboPlanController {
         pageSize: Int?,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<TurboPlanPageVO>
 
     @ApiOperation("加速方案-详情页,编辑方案名称及开启状态")
@@ -105,7 +115,10 @@ interface IUserTurboPlanController {
         user: String,
         @ApiParam(value = "蓝盾项目id", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_PROJECT_ID)
-        projectId: String
+        projectId: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<Boolean>
 
     @ApiOperation("加速方案-详情页,编辑配置参数值")
@@ -127,7 +140,10 @@ interface IUserTurboPlanController {
         user: String,
         @ApiParam(value = "蓝盾项目id", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_PROJECT_ID)
-        projectId: String
+        projectId: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<Boolean>
 
     @ApiOperation("加速方案-列表页,编辑方案清单置顶状态")
@@ -144,7 +160,10 @@ interface IUserTurboPlanController {
         topStatus: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<Boolean>
 
     @ApiOperation("获取有效编译加速方案清单")
@@ -161,7 +180,10 @@ interface IUserTurboPlanController {
         pageNum: Int?,
         @ApiParam(value = "每页多少条", required = true)
         @RequestParam("pageSize")
-        pageSize: Int?
+        pageSize: Int?,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<Page<TurboPlanDetailVO>>
 
     @ApiOperation("根据流水线位置寻找编译加速方案id")
@@ -195,6 +217,8 @@ interface IUserTurboPlanController {
         user: String,
         @ApiParam(value = "蓝盾项目id", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_PROJECT_ID)
-        projectId: String
+        projectId: String,@RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null,
     ): Response<String>
 }

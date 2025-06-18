@@ -4,6 +4,7 @@ import com.tencent.devops.api.pojo.Response
 import com.tencent.devops.common.api.exception.TurboException
 import com.tencent.devops.common.api.exception.code.IS_NOT_ADMIN_MEMBER
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.common.util.constants.NO_ADMIN_MEMBER_MESSAGE
 import com.tencent.devops.turbo.api.IUserTurboPlanController
 import com.tencent.devops.turbo.pojo.TurboPlanModel
@@ -23,65 +24,114 @@ class UserTurboPlanController @Autowired constructor(
     private val turboAuthService: TurboAuthService
 ) : IUserTurboPlanController {
 
-    override fun addNewTurboPlan(turboPlanModel: TurboPlanModel, projectId: String, user: String): Response<String?> {
+    override fun addNewTurboPlan(
+        turboPlanModel: TurboPlanModel,
+        projectId: String,
+        user: String,
+        tenantId: String?
+    ): Response<String?> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
-        return Response.success(turboPlanService.addNewTurboPlan(turboPlanModel, user))
+        return Response.success(turboPlanService.addNewTurboPlan(turboPlanModel, user, tenantId))
     }
 
-    override fun getTurboPlanStatRowData(projectId: String, pageNum: Int?, pageSize: Int?, user: String): Response<TurboPlanPageVO> {
+    override fun getTurboPlanStatRowData(
+        projectId: String,
+        pageNum: Int?,
+        pageSize: Int?,
+        user: String,
+        tenantId: String?
+    ): Response<TurboPlanPageVO> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
         return Response.success(turboPlanService.getTurboPlanStatRowData(projectId, pageNum, pageSize))
     }
 
-    override fun getTurboPlanDetailByPlanId(planId: String, projectId: String, user: String): Response<TurboPlanDetailVO> {
+    override fun getTurboPlanDetailByPlanId(
+        planId: String,
+        projectId: String,
+        user: String,
+        tenantId: String?
+    ): Response<TurboPlanDetailVO> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
         return Response.success(turboPlanService.getTurboPlanDetailByPlanId(planId))
     }
 
-    override fun putTurboPlanDetailNameAndOpenStatus(turboPlanModel: TurboPlanModel, planId: String, user: String, projectId: String): Response<Boolean> {
+    override fun putTurboPlanDetailNameAndOpenStatus(
+        turboPlanModel: TurboPlanModel,
+        planId: String,
+        user: String,
+        projectId: String,
+        tenantId: String?
+    ): Response<Boolean> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
         return Response.success(turboPlanService.putTurboPlanDetailNameAndOpenStatus(turboPlanModel, planId, user))
     }
 
-    override fun putTurboPlanConfigParam(turboPlanModel: TurboPlanModel, planId: String, user: String, projectId: String): Response<Boolean> {
+    override fun putTurboPlanConfigParam(
+        turboPlanModel: TurboPlanModel,
+        planId: String,
+        user: String,
+        projectId: String,
+        tenantId: String?
+    ): Response<Boolean> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
         return Response.success(turboPlanService.putTurboPlanConfigParam(turboPlanModel, planId, user))
     }
 
-    override fun putTurboPlanTopStatus(planId: String, topStatus: String, user: String): Response<Boolean> {
+    override fun putTurboPlanTopStatus(
+        planId: String,
+        topStatus: String,
+        user: String,
+        tenantId: String?
+    ): Response<Boolean> {
         return Response.success(turboPlanService.putTurboPlanTopStatus(planId, topStatus, user))
     }
 
-    override fun getAvailableTurboPlanList(projectId: String, pageNum: Int?, pageSize: Int?): Response<Page<TurboPlanDetailVO>> {
+    override fun getAvailableTurboPlanList(
+        projectId: String,
+        pageNum: Int?,
+        pageSize: Int?,
+        tenantId: String?
+    ): Response<Page<TurboPlanDetailVO>> {
         return Response.success(turboPlanService.getAvailableProjectIdList(projectId, pageNum, pageSize))
     }
 
-    override fun findTurboPlanIdByProjectIdAndPipelineInfo(projectId: String, pipelineId: String, pipelineElementId: String): Response<TurboMigratedPlanVO?> {
-        return Response.success(turboPlanService.findMigratedTurboPlanByPipelineInfo(projectId, pipelineId, pipelineElementId))
+    override fun findTurboPlanIdByProjectIdAndPipelineInfo(
+        projectId: String,
+        pipelineId: String,
+        pipelineElementId: String
+    ): Response<TurboMigratedPlanVO?> {
+        return Response.success(
+            turboPlanService.findMigratedTurboPlanByPipelineInfo(
+                projectId,
+                pipelineId,
+                pipelineElementId
+            )
+        )
     }
 
     override fun manualRefreshStatus(
         reqVO: TurboPlanStatusBatchUpdateReqVO,
         user: String,
-        projectId: String
+        projectId: String,
+        tenantId: String?
     ): Response<String> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
         return Response.success(turboPlanService.manualRefreshStatus(reqVO))
