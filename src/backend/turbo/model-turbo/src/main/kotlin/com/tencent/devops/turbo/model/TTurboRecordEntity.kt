@@ -20,6 +20,9 @@ data class TTurboRecordEntity(
     @Id
     var id: String? = null,
     // --------------冗余字段start---------------
+    // 租户id
+    @Field("tenant_id")
+    val tenantId: String? = null,
     // 蓝盾项目id
     @Field("project_id")
     @Indexed(background = true)

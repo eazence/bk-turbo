@@ -20,6 +20,10 @@ data class TTbsDaySummaryEntity(
     @Indexed(background = true)
     var day: String?,
 
+    // 租户id
+    @Field("tenant_id")
+    val tenantId: String? = null,
+
     /**
      * 蓝盾项目英文id
      */

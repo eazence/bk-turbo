@@ -117,7 +117,7 @@ class TurboPlanService @Autowired constructor(
      * 新增加速方案
      */
     @BkTimed("add_new_turbo_plan")
-    fun addNewTurboPlan(turboPlanModel: TurboPlanModel, user: String): String? {
+    fun addNewTurboPlan(turboPlanModel: TurboPlanModel, user: String, tenantId: String?): String? {
         logger.info("add turbo plan, engine code: ${turboPlanModel.engineCode}, plan name: ${turboPlanModel.planName}")
         var turboPlanEntity: TTurboPlanEntity? = null
         with(turboPlanModel) {
@@ -461,7 +461,7 @@ class TurboPlanService @Autowired constructor(
     /**
      * 获取 加速方案-列表页 方案清单数据
      */
-    fun getTurboPlanStatRowData(projectId: String, pageNum: Int?, pageSize: Int?): TurboPlanPageVO {
+    fun getTurboPlanStatRowData(tenantId: String?, projectId: String, pageNum: Int?, pageSize: Int?): TurboPlanPageVO {
         val pageable = PageUtils.convertPageWithMultiFields(pageNum, pageSize, arrayOf("open_status", "top_status", "updated_date"), "DESC")
         val turboPlanList = turboPlanDao.getTurboPlanStatRowData(projectId, pageable).map {
             TurboPlanStatRowVO(

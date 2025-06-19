@@ -3,6 +3,7 @@ package com.tencent.devops.turbo.api
 import com.tencent.devops.api.pojo.Response
 import com.tencent.devops.common.api.annotation.ServiceInterface
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.util.constants.AUTH_HEADER_BK_TENANT_ID
 import com.tencent.devops.turbo.pojo.TurboPlanModel
 import com.tencent.devops.turbo.pojo.TurboRecordModel
 import com.tencent.devops.turbo.validate.TurboPlanGroup
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import java.time.LocalDate
@@ -124,6 +126,9 @@ interface IServiceTurboController {
             @ApiParam(value = "用户信息", required = true)
             @PathVariable("userId")
             userId: String,
+            @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+            @ApiParam(value = "租户ID", required = false)
+            tenantId: String? = null,
             @ApiParam(value = "新增加速方案请求数据信息", required = true)
             @RequestBody
             @Validated(TurboPlanGroup.Create::class)

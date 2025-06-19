@@ -33,6 +33,9 @@ data class TTurboPlanInstanceEntity(
     @Field("turbo_plan_id")
     @Indexed(background = true)
     var turboPlanId: String? = null,
+    // 租户id
+    @Field("tenant_id")
+    val tenantId: String? = null,
     // 项目id
     @Field("project_id")
     val projectId: String,

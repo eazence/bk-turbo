@@ -4,6 +4,7 @@ import com.tencent.devops.api.pojo.Response
 import com.tencent.devops.common.api.exception.TurboException
 import com.tencent.devops.common.api.exception.code.IS_NOT_ADMIN_MEMBER
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.common.util.constants.NO_ADMIN_MEMBER_MESSAGE
 import com.tencent.devops.turbo.api.IServiceTurboController
 import com.tencent.devops.turbo.pojo.TurboPlanModel
@@ -70,11 +71,16 @@ class ServiceTurboController @Autowired constructor(
         return Response.success(turboPlanService.getTurboPlanDetailByPlanId(planId))
     }
 
-    override fun addNewTurboPlan(projectId: String, userId: String, turboPlanModel: TurboPlanModel): Response<String?> {
+    override fun addNewTurboPlan(
+        projectId: String,
+        userId: String,
+        tenantId: String?,
+        turboPlanModel: TurboPlanModel
+    ): Response<String?> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, userId)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), userId)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
-        return Response.success(turboPlanService.addNewTurboPlan(turboPlanModel, userId))
+        return Response.success(turboPlanService.addNewTurboPlan(turboPlanModel, userId, tenantId))
     }
 }

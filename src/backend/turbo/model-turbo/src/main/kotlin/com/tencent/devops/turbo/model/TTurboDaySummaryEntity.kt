@@ -19,6 +19,9 @@ import java.time.LocalDateTime
 data class TTurboDaySummaryEntity(
     @Id
     var id: String? = null,
+    // 租户id
+    @Field("tenant_id")
+    val tenantId: String? = null,
     // 蓝盾项目id
     @Field("project_id")
     var projectId: String,

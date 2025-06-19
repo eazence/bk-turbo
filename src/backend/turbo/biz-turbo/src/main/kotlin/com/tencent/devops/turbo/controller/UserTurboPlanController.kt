@@ -48,7 +48,7 @@ class UserTurboPlanController @Autowired constructor(
         if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
-        return Response.success(turboPlanService.getTurboPlanStatRowData(projectId, pageNum, pageSize))
+        return Response.success(turboPlanService.getTurboPlanStatRowData(tenantId, projectId, pageNum, pageSize))
     }
 
     override fun getTurboPlanDetailByPlanId(

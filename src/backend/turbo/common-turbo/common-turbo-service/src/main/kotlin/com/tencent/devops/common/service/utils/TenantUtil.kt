@@ -23,8 +23,8 @@ class TenantUtil : ApplicationContextAware, InitializingBean {
     companion object {
         private var enableMultiTenantMode: Boolean = false
         private const val DEFAULT_TENANT_ID_FOR_SINGLE = "default"
-        public const val DEFAULT_TENANT_ID_FOR_MULTI = "system"
-        private val logger = LoggerFactory.getLogger(this::class.java)
+        private const val DEFAULT_TENANT_ID_FOR_MULTI = "system"
+        private val logger = LoggerFactory.getLogger(TenantUtil::class.java)
 
         /**
          * 是否开启多租户模式
@@ -34,16 +34,17 @@ class TenantUtil : ApplicationContextAware, InitializingBean {
         /**
          * 获取租户id
          */
-        fun getTenantId(tenantId: String? = null): String? {
+        fun getTenantId(tenantId: String? = null): String {
             return when {
-                !enableMultiTenantMode -> null
-                !tenantId.isNullOrBlank() -> tenantId
+                !enableMultiTenantMode -> DEFAULT_TENANT_ID_FOR_SINGLE
+                !tenantId.isNullOrEmpty() -> tenantId
                 else -> DEFAULT_TENANT_ID_FOR_MULTI
             }
         }
 
         /**
          * 生成英文名称
+         * @param tenantEnglishName 同projectId、projectCode、englishName
          */
         fun parseEnglishName(tenantId: String? = null, tenantEnglishName: String): String {
             return when {

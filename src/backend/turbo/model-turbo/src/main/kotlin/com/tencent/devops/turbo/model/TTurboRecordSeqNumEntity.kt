@@ -11,6 +11,10 @@ data class TTurboRecordSeqNumEntity(
     @Id
     var id: String? = null,
 
+    // 租户id
+    @Field("tenant_id")
+    val tenantId: String? = null,
+
     @Field("project_id")
     @Indexed(background = true)
     val projectId: String? = null,
