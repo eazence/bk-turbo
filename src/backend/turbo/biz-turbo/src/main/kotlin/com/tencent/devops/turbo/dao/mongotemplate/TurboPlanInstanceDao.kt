@@ -1,6 +1,7 @@
 package com.tencent.devops.turbo.dao.mongotemplate
 
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.common.util.constants.SYSTEM_ADMIN
 import com.tencent.devops.turbo.model.TTurboPlanInstanceEntity
 import org.springframework.beans.factory.annotation.Autowired
@@ -88,5 +89,14 @@ class TurboPlanInstanceDao @Autowired constructor(
         update.set("updated_by", SYSTEM_ADMIN)
         update.set("updated_date", LocalDateTime.now())
         mongoTemplate.updateFirst(query, update, TTurboPlanInstanceEntity::class.java)
+    }
+
+    fun findByProjectId(projectId: String, tenantId: String?): List<TTurboPlanInstanceEntity> {
+        val query = Query().addCriteria(Criteria.where("project_id").`is`(projectId))
+
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            query.addCriteria(Criteria.where("tenant_id").`in`(tenantId, TenantUtil.getTenantId()))
+        }
+        return mongoTemplate.find(query, TTurboPlanInstanceEntity::class.java)
     }
 }

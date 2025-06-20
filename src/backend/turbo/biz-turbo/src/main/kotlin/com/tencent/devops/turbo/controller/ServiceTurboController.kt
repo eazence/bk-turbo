@@ -43,18 +43,20 @@ class ServiceTurboController @Autowired constructor(
     }
 
     override fun getTurboRecordHistoryList(
-            pageNum: Int?,
-            pageSize: Int?,
-            sortField: String?,
-            sortType: String?,
-            turboRecordModel: TurboRecordModel,
-            projectId: String,
-            userId: String
+        pageNum: Int?,
+        pageSize: Int?,
+        sortField: String?,
+        sortType: String?,
+        turboRecordModel: TurboRecordModel,
+        projectId: String,
+        userId: String,
+        tenantId: String?
     ): Response<Page<TurboRecordHistoryVO>> {
         // 判断是否是管理员
         if (!turboAuthService.getAuthResult(projectId, userId)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
+        turboRecordModel.tenantId = tenantId
         return Response.success(
             turboRecordService.getTurboRecordHistoryList(pageNum, pageSize, sortField, sortType, turboRecordModel))
     }

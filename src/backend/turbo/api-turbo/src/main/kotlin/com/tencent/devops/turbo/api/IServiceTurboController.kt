@@ -91,8 +91,10 @@ interface IServiceTurboController {
             projectId: String,
             @ApiParam(value = "用户信息", required = true)
             @PathVariable("userId")
-            userId: String
-
+            userId: String,
+            @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+            @ApiParam(value = "租户ID", required = false)
+            tenantId: String? = null
     ): Response<Page<TurboRecordHistoryVO>>
 
 

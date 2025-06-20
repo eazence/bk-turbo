@@ -2,6 +2,7 @@ package com.tencent.devops.turbo.api
 
 import com.tencent.devops.api.pojo.Response
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.util.constants.AUTH_HEADER_BK_TENANT_ID
 import com.tencent.devops.common.util.constants.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.common.util.constants.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.turbo.pojo.TurboRecordModel
@@ -53,7 +54,10 @@ interface IUserTurboRecordController {
         projectId: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<Page<TurboRecordHistoryVO>>
 
     @ApiOperation("加速历史,获取搜索条件数据")
@@ -64,7 +68,10 @@ interface IUserTurboRecordController {
     fun getPipelineAndPlanAndStatusList(
         @ApiParam(value = "项目id", required = true)
         @PathVariable("projectId")
-        projectId: String
+        projectId: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<TurboListSelectVO>
 
     @ApiOperation("获取编译加速记录统计数据")
@@ -92,6 +99,9 @@ interface IUserTurboRecordController {
         projectId: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<TurboRecordDisplayVO>
 }

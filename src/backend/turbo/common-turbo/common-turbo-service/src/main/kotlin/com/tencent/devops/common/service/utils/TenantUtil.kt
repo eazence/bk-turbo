@@ -34,9 +34,9 @@ class TenantUtil : ApplicationContextAware, InitializingBean {
         /**
          * 获取租户id
          */
-        fun getTenantId(tenantId: String? = null): String {
+        fun getTenantId(tenantId: String? = null): String? {
             return when {
-                !enableMultiTenantMode -> DEFAULT_TENANT_ID_FOR_SINGLE
+                !enableMultiTenantMode -> null
                 !tenantId.isNullOrEmpty() -> tenantId
                 else -> DEFAULT_TENANT_ID_FOR_MULTI
             }
@@ -65,5 +65,10 @@ class TenantUtil : ApplicationContextAware, InitializingBean {
                 else -> null
             }
         }
+
+        /**
+         * 判断是否为多租户环境
+         */
+        fun useTenantCondition(tenantId: String?) = isMultiTenantMode() && null != tenantId
     }
 }

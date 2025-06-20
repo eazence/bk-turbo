@@ -216,7 +216,7 @@ class TurboPlanInstanceService @Autowired constructor(
     /**
      * 查询条件拉取框流水线信息
      */
-    fun findPipelineInfoByProjectId(projectId: String): List<TTurboPlanInstanceEntity> {
+    fun findPipelineInfoByProjectId(projectId: String, tenantId: String?): List<TTurboPlanInstanceEntity> {
         return turboPlanInstanceRepository.findByProjectId(projectId)
     }
 

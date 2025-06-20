@@ -1,6 +1,7 @@
 package com.tencent.devops.turbo.dao.mongotemplate
 
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.common.util.constants.SYSTEM_ADMIN
 import com.tencent.devops.turbo.dto.TurboRecordRefreshModel
 import com.tencent.devops.turbo.enums.EnumDistccTaskStatus
@@ -129,6 +130,11 @@ class TurboRecordDao @Autowired constructor(
     fun getTurboRecordHistoryList(pageable: Pageable, turboRecordModel: TurboRecordModel, startTime: LocalDate?, endTime: LocalDate?): Page<TTurboRecordEntity> {
         val criteriaList = mutableListOf<Criteria>()
 
+        // 租户id
+        val tenantId = turboRecordModel.tenantId
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            criteriaList.add(Criteria.where("tenant_id").`in`(tenantId, TenantUtil.getTenantId()))
+        }
         // 项目Id
         val projectId = turboRecordModel.projectId
         if (!projectId.isNullOrEmpty()) {

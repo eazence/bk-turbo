@@ -8,6 +8,7 @@ import javax.validation.constraints.NotBlank
 
 @ApiModel("编译加速历史请求数据模型")
 data class TurboRecordModel(
+
     @ApiModelProperty("项目id")
     @get:NotBlank(
         message = "项目id不能为空",
@@ -16,6 +17,8 @@ data class TurboRecordModel(
         ]
     )
     val projectId: String?,
+    @ApiModelProperty("租户id")
+    var tenantId: String?,
     @ApiModelProperty("加速方案id")
     val turboPlanId: List<String>?,
     @ApiModelProperty("流水线id")

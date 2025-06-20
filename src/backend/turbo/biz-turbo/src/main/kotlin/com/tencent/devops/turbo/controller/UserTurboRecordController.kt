@@ -5,6 +5,7 @@ import com.tencent.devops.common.api.exception.TurboException
 import com.tencent.devops.common.api.exception.code.IS_NOT_ADMIN_MEMBER
 import com.tencent.devops.common.api.exception.code.TURBO_PARAM_INVALID
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.common.util.constants.NO_ADMIN_MEMBER_MESSAGE
 import com.tencent.devops.turbo.api.IUserTurboRecordController
 import com.tencent.devops.turbo.enums.EnumDistccTaskStatus
@@ -40,17 +41,27 @@ class UserTurboRecordController @Autowired constructor(
         sortType: String?,
         turboRecordModel: TurboRecordModel,
         projectId: String,
-        user: String
+        user: String,
+        tenantId: String?
     ): Response<Page<TurboRecordHistoryVO>> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
-        return Response.success(turboRecordService.getTurboRecordHistoryList(pageNum, pageSize, sortField, sortType, turboRecordModel))
+        turboRecordModel.tenantId = tenantId
+        return Response.success(
+            turboRecordService.getTurboRecordHistoryList(
+                pageNum,
+                pageSize,
+                sortField,
+                sortType,
+                turboRecordModel
+            )
+        )
     }
 
-    override fun getPipelineAndPlanAndStatusList(projectId: String): Response<TurboListSelectVO> {
-        val turboPlanInstanceList = turboPlanInstanceService.findPipelineInfoByProjectId(projectId)
+    override fun getPipelineAndPlanAndStatusList(projectId: String, tenantId: String?): Response<TurboListSelectVO> {
+        val turboPlanInstanceList = turboPlanInstanceService.findPipelineInfoByProjectId(projectId, tenantId)
         return Response.success(
             TurboListSelectVO(
                 planInfo = turboPlanService.getByProjectId(projectId).associate { it.id!! to it.planName },
@@ -67,9 +78,14 @@ class UserTurboRecordController @Autowired constructor(
         )
     }
 
-    override fun getTurboDisplayInfoById(turboRecordId: String, projectId: String, user: String): Response<TurboRecordDisplayVO> {
+    override fun getTurboDisplayInfoById(
+        turboRecordId: String,
+        projectId: String,
+        user: String,
+        tenantId: String?
+    ): Response<TurboRecordDisplayVO> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
 
