@@ -2,6 +2,7 @@ package com.tencent.devops.turbo.dao.mongotemplate
 
 import com.mongodb.bulk.BulkWriteResult
 import com.tencent.devops.common.api.pojo.Page
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.common.util.constants.SYSTEM_ADMIN
 import com.tencent.devops.turbo.model.TTurboPlanEntity
 import com.tencent.devops.turbo.pojo.TurboDaySummaryOverviewModel
@@ -297,12 +298,16 @@ class TurboPlanDao @Autowired constructor(
      * 查询项目下指定状态的加速方案
      */
     fun findByProjectIdAndOpenStatus(
+        tenantId: String?,
         projectId: String,
         updatedBy: String?,
         openStatus: Boolean = true
     ): List<TTurboPlanEntity> {
         val query = Query()
         query.addCriteria(Criteria.where("project_id").`is`(projectId).and("open_status").`is`(openStatus))
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            query.addCriteria(Criteria.where("tenant_id").`in`(tenantId, TenantUtil.getTenantId()))
+        }
 
         updatedBy?.let {
             query.addCriteria(Criteria.where("updated_by").`is`(updatedBy))

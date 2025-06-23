@@ -663,7 +663,7 @@ class TurboPlanService @Autowired constructor(
      * 项目停用：批量停用项目下的加速方案，更新者为Turbo
      * 项目启用：把更新者为Turbo的加速方案批量启用，用户停用的不需更改
      */
-    fun updatePlanStatusByBkProjectStatus(userId: String, projectId: String, enabled: Boolean) {
+    fun updatePlanStatusByBkProjectStatus(userId: String, projectId: String, enabled: Boolean, tenantId: String?) {
         logger.info("ProjectStatusUpdate event: $userId, $projectId, $enabled")
         // true表示启用项目，false表示停用项目
         // 启用项目时注意，只启用系统自动停用的方案，用户停用的方案保持停用
@@ -671,6 +671,7 @@ class TurboPlanService @Autowired constructor(
 
         // 获取到待启用/待停用的加速方案清单
         val turboPlanEntityList = turboPlanDao.findByProjectIdAndOpenStatus(
+            tenantId = tenantId,
             projectId = projectId,
             updatedBy = updatedBy,
             openStatus = !enabled
@@ -708,13 +709,13 @@ class TurboPlanService @Autowired constructor(
     /**
      * 更新存量停用项目的加速方案状态
      */
-    fun manualRefreshStatus(reqVO: TurboPlanStatusBatchUpdateReqVO): String {
+    fun manualRefreshStatus(reqVO: TurboPlanStatusBatchUpdateReqVO, tenantId: String?): String {
         val projectIdList = reqVO.projectIdList
         logger.info("manualRefreshStatus: ${reqVO.status}, project id:${projectIdList.joinToString()}")
 
         val failedProjectIds = projectIdList.filter { projectId ->
             try {
-                this.updatePlanStatusByBkProjectStatus(SYSTEM_ADMIN, projectId, reqVO.status)
+                this.updatePlanStatusByBkProjectStatus(SYSTEM_ADMIN, projectId, reqVO.status, tenantId)
                 OkhttpUtil.needSleep(200)
                 false
             } catch (e: TurboException) {
