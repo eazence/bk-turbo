@@ -91,6 +91,10 @@ class TurboPlanInstanceDao @Autowired constructor(
         mongoTemplate.updateFirst(query, update, TTurboPlanInstanceEntity::class.java)
     }
 
+    /**
+     * 根据项目ID查询所有加速实例
+     * @param tenantId 租户ID
+     */
     fun findByProjectId(projectId: String, tenantId: String?): List<TTurboPlanInstanceEntity> {
         val query = Query().addCriteria(Criteria.where("project_id").`is`(projectId))
 
@@ -98,5 +102,27 @@ class TurboPlanInstanceDao @Autowired constructor(
             query.addCriteria(Criteria.where("tenant_id").`in`(tenantId, TenantUtil.getTenantId()))
         }
         return mongoTemplate.find(query, TTurboPlanInstanceEntity::class.java)
+    }
+
+    /**
+     * 根据项目ID、流水线ID和流水线元素ID查询加速实例
+     * @param tenantId 租户ID
+     */
+    fun findByProjectIdAndPipelineInfo(
+        tenantId: String?,
+        projectId: String,
+        pipelineId: String,
+        pipelineElementId: String
+    ): TTurboPlanInstanceEntity? {
+        val criteria = Criteria.where("project_id").`is`(projectId)
+            .and("pipeline_id").`is`(pipelineId)
+            .and("pipeline_element_id").`is`(pipelineElementId)
+
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            criteria.and("tenant_id").`in`(tenantId, TenantUtil.getTenantId())
+        }
+        val query = Query().addCriteria(criteria)
+
+        return mongoTemplate.findOne(query, TTurboPlanInstanceEntity::class.java)
     }
 }

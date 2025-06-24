@@ -160,10 +160,7 @@ interface IUserTurboPlanController {
         topStatus: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String,
-        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
-        @ApiParam(value = "租户ID", required = false)
-        tenantId: String? = null
+        user: String
     ): Response<Boolean>
 
     @ApiOperation("获取有效编译加速方案清单")
@@ -200,7 +197,10 @@ interface IUserTurboPlanController {
         pipelineId: String,
         @ApiParam(value = "流水线原子id", required = true)
         @PathVariable("pipelineElementId")
-        pipelineElementId: String
+        pipelineElementId: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<TurboMigratedPlanVO?>
 
     @ApiOperation("加速方案-刷新状态")
@@ -217,8 +217,9 @@ interface IUserTurboPlanController {
         user: String,
         @ApiParam(value = "蓝盾项目id", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_PROJECT_ID)
-        projectId: String,@RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        projectId: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
         @ApiParam(value = "租户ID", required = false)
-        tenantId: String? = null,
+        tenantId: String? = null
     ): Response<String>
 }

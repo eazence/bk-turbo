@@ -1,6 +1,7 @@
 package com.tencent.devops.turbo.controller
 
 import com.tencent.devops.api.pojo.Response
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.turbo.api.IServiceTurboPlanController
 import com.tencent.devops.turbo.enums.ProjectEventType
 import com.tencent.devops.turbo.pojo.ProjectCallbackEvent
@@ -49,8 +50,12 @@ class ServiceTurboPlanController @Autowired constructor(
 
                         turboPlanService.updatePlanStatusByBkProjectStatus(
                             userId = userId,
-                            projectId = projectId,
-                            enabled = enabled
+                            projectId = TenantUtil.parseEnglishName(
+                                TenantUtil.getTenantIdByEnglishName(projectId),
+                                projectId
+                            ),
+                            enabled = enabled,
+                            tenantId = TenantUtil.getTenantIdByEnglishName(projectId)
                         )
 
                         logger.info("项目状态更新完成: userId=$userId, projectId=$projectId, enabled=$enabled")

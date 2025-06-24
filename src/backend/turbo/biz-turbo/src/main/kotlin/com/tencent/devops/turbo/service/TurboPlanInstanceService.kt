@@ -217,14 +217,19 @@ class TurboPlanInstanceService @Autowired constructor(
      * 查询条件拉取框流水线信息
      */
     fun findPipelineInfoByProjectId(projectId: String, tenantId: String?): List<TTurboPlanInstanceEntity> {
-        return turboPlanInstanceRepository.findByProjectId(projectId)
+        return turboPlanInstanceDao.findByProjectId(projectId, tenantId)
     }
 
     /**
      * 通过项目id和流水线信息查找
      */
-    fun findByProjectIdAndPipelineInfo(projectId: String, pipelineId: String, pipelineElementId: String): TTurboPlanInstanceEntity? {
-        return turboPlanInstanceRepository.findByProjectIdAndPipelineIdAndPipelineElementId(projectId, pipelineId, pipelineElementId)
+    fun findByProjectIdAndPipelineInfo(
+        tenantId: String?,
+        projectId: String,
+        pipelineId: String,
+        pipelineElementId: String
+    ): TTurboPlanInstanceEntity? {
+        return turboPlanInstanceDao.findByProjectIdAndPipelineInfo(tenantId, projectId, pipelineId, pipelineElementId)
     }
 
     // ///////////////////////////以下逻辑为数据刷新逻辑，刷新后需要去除////////////////////////////////

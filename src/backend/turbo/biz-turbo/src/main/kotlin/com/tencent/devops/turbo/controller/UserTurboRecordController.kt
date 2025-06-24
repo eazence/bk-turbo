@@ -65,8 +65,10 @@ class UserTurboRecordController @Autowired constructor(
         return Response.success(
             TurboListSelectVO(
                 planInfo = turboPlanService.getByProjectId(projectId).associate { it.id!! to it.planName },
-                pipelineInfo = turboPlanInstanceList.filter { !it.pipelineId.isNullOrBlank() }.associate { it.pipelineId!! to it.pipelineName },
-                clientIpInfo = turboPlanInstanceList.filter { !it.clientIp.isNullOrBlank() }.distinctBy { it.clientIp }.map { it.clientIp!! },
+                pipelineInfo = turboPlanInstanceList.filter { !it.pipelineId.isNullOrBlank() }
+                    .associate { it.pipelineId!! to it.pipelineName },
+                clientIpInfo = turboPlanInstanceList.filter { !it.clientIp.isNullOrBlank() }.distinctBy { it.clientIp }
+                    .map { it.clientIp!! },
                 statusInfo = EnumDistccTaskStatus.values().associate { it.getTBSStatus() to it.getStatusName() }
             )
         )

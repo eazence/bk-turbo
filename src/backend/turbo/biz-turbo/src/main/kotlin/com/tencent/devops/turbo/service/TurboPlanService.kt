@@ -463,7 +463,7 @@ class TurboPlanService @Autowired constructor(
      */
     fun getTurboPlanStatRowData(tenantId: String?, projectId: String, pageNum: Int?, pageSize: Int?): TurboPlanPageVO {
         val pageable = PageUtils.convertPageWithMultiFields(pageNum, pageSize, arrayOf("open_status", "top_status", "updated_date"), "DESC")
-        val turboPlanList = turboPlanDao.getTurboPlanStatRowData(projectId, pageable).map {
+        val turboPlanList = turboPlanDao.getTurboPlanStatRowData(tenantId, projectId, pageable).map {
             TurboPlanStatRowVO(
                 planId = it.id,
                 planName = it.planName,
@@ -518,13 +518,25 @@ class TurboPlanService @Autowired constructor(
     /**
      * 获取可用的编译加速方案清单
      */
-    fun getAvailableProjectIdList(projectId: String, pageNum: Int?, pageSize: Int?): Page<TurboPlanDetailVO> {
-        val pageable = PageUtils.convertPageWithMultiFields(pageNum, pageSize, arrayOf("top_status", "updated_date"), "DESC")
-        val turboPlanPageList = turboPlanRepository.findByProjectIdAndOpenStatusAndMigratedIn(projectId, true, listOf(false, null), pageable)
-        if (null == turboPlanPageList || turboPlanPageList.content.isNullOrEmpty()) {
+    fun getAvailableProjectIdList(
+        tenantId: String?,
+        projectId: String,
+        pageNum: Int?,
+        pageSize: Int?
+    ): Page<TurboPlanDetailVO> {
+        val pageable =
+            PageUtils.convertPageWithMultiFields(pageNum, pageSize, arrayOf("top_status", "updated_date"), "DESC")
+        val turboPlanPageList = turboPlanDao.findByProjectIdAndOpenStatusAndMigratedIn(
+            tenantId,
+            projectId,
+            true,
+            listOf(false, null),
+            pageable
+        )
+        if (turboPlanPageList.records.isEmpty()) {
             return Page(0, 0, 0, listOf())
         }
-        val turboPlanVOList = turboPlanPageList.content.map {
+        val turboPlanVOList = turboPlanPageList.records.map {
             TurboPlanDetailVO(
                 planId = it.id!!,
                 planName = it.planName,
@@ -575,8 +587,14 @@ class TurboPlanService @Autowired constructor(
     /**
      * 通过流水线信息查找
      */
-    fun findMigratedTurboPlanByPipelineInfo(projectId: String, pipelineId: String, pipelineElementId: String): TurboMigratedPlanVO? {
-        val turboPlanInstanceEntity = turboPlanInstanceService.findByProjectIdAndPipelineInfo(projectId, pipelineId, pipelineElementId)
+    fun findMigratedTurboPlanByPipelineInfo(
+        projectId: String,
+        pipelineId: String,
+        pipelineElementId: String,
+        tenantId: String?
+    ): TurboMigratedPlanVO? {
+        val turboPlanInstanceEntity =
+            turboPlanInstanceService.findByProjectIdAndPipelineInfo(tenantId, projectId, pipelineId, pipelineElementId)
         if (null == turboPlanInstanceEntity || turboPlanInstanceEntity.id.isNullOrBlank()) {
             logger.info("no turbo plan instance found with project id: $projectId, pipeline id: $pipelineId and pipeline element id: $pipelineElementId")
             return null
@@ -664,7 +682,7 @@ class TurboPlanService @Autowired constructor(
      * 项目启用：把更新者为Turbo的加速方案批量启用，用户停用的不需更改
      */
     fun updatePlanStatusByBkProjectStatus(userId: String, projectId: String, enabled: Boolean, tenantId: String?) {
-        logger.info("ProjectStatusUpdate event: $userId, $projectId, $enabled")
+        logger.info("ProjectStatusUpdate event: $userId, $projectId, $enabled, $tenantId")
         // true表示启用项目，false表示停用项目
         // 启用项目时注意，只启用系统自动停用的方案，用户停用的方案保持停用
         val updatedBy = if (enabled) SYSTEM_ADMIN else null

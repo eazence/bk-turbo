@@ -95,8 +95,7 @@ class UserTurboPlanController @Autowired constructor(
     override fun putTurboPlanTopStatus(
         planId: String,
         topStatus: String,
-        user: String,
-        tenantId: String?
+        user: String
     ): Response<Boolean> {
         return Response.success(turboPlanService.putTurboPlanTopStatus(planId, topStatus, user))
     }
@@ -107,19 +106,21 @@ class UserTurboPlanController @Autowired constructor(
         pageSize: Int?,
         tenantId: String?
     ): Response<Page<TurboPlanDetailVO>> {
-        return Response.success(turboPlanService.getAvailableProjectIdList(projectId, pageNum, pageSize))
+        return Response.success(turboPlanService.getAvailableProjectIdList(tenantId, projectId, pageNum, pageSize))
     }
 
     override fun findTurboPlanIdByProjectIdAndPipelineInfo(
         projectId: String,
         pipelineId: String,
-        pipelineElementId: String
+        pipelineElementId: String,
+        tenantId: String?
     ): Response<TurboMigratedPlanVO?> {
         return Response.success(
             turboPlanService.findMigratedTurboPlanByPipelineInfo(
                 projectId,
                 pipelineId,
-                pipelineElementId
+                pipelineElementId,
+                tenantId
             )
         )
     }

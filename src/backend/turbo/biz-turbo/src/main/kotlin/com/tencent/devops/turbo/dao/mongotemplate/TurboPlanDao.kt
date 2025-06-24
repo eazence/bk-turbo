@@ -83,12 +83,16 @@ class TurboPlanDao @Autowired constructor(
     /**
      * 获取 加速方案-列表页 方案清单数据
      */
-    fun getTurboPlanStatRowData(projectId: String, pageable: Pageable?): List<TTurboPlanEntity> {
-        val query = Query()
-        query.addCriteria(Criteria.where("project_id").`is`(projectId))
-        if (null != pageable) {
-            query.with(pageable)
+    fun getTurboPlanStatRowData(tenantId: String?, projectId: String, pageable: Pageable?): List<TTurboPlanEntity> {
+
+        val criteria = Criteria.where("project_id").`is`(projectId)
+
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            criteria.and("tenant_id").`in`(tenantId, TenantUtil.getTenantId())
         }
+
+        val query = Query().addCriteria(criteria).apply { pageable?.let { with(it) } }
+
         return mongoTemplate.find(query, TTurboPlanEntity::class.java, "t_turbo_plan_entity")
     }
 
@@ -333,5 +337,29 @@ class TurboPlanDao @Autowired constructor(
         }
 
         return bulkOps.execute()
+    }
+
+    /**
+     * 查询项目可用的加速方案清单
+     */
+    fun findByProjectIdAndOpenStatusAndMigratedIn(
+        tenantId: String?,
+        projectId: String,
+        openStatus: Boolean,
+        migratedList: List<Boolean?>,
+        pageable: Pageable
+    ): Page<TTurboPlanEntity> {
+        val criteria = Criteria.where("project_id").`is`(projectId)
+            .and("open_status").`is`(openStatus)
+            .and("migrated_in").`in`(migratedList)
+
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            criteria.and("tenant_id").`in`(tenantId, TenantUtil.getTenantId())
+        }
+        val query = Query().addCriteria(criteria)
+        query.with(pageable)
+        val queryResults = mongoTemplate.find(query, TTurboPlanEntity::class.java, "t_turbo_plan_entity")
+
+        return Page(pageable.pageNumber + 1, pageable.pageSize, 0, queryResults)
     }
 }

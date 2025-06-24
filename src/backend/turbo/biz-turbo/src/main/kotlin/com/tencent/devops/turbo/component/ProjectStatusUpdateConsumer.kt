@@ -23,7 +23,8 @@ class ProjectStatusUpdateConsumer @Autowired constructor(
             turboPlanService.updatePlanStatusByBkProjectStatus(
                 userId = event["userId"] as String,
                 projectId = event["projectId"] as String,
-                enabled = event["enabled"] as Boolean
+                enabled = event["enabled"] as Boolean,
+                tenantId = event["tenantId"] as String
             )
 
         } catch (e: Exception) {
