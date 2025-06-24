@@ -1,6 +1,7 @@
 package com.tencent.devops.turbo.api
 
 import com.tencent.devops.api.pojo.Response
+import com.tencent.devops.common.util.constants.AUTH_HEADER_BK_TENANT_ID
 import com.tencent.devops.common.util.constants.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.turbo.pojo.ProjectCallbackEvent
 import com.tencent.devops.turbo.pojo.TurboPlanUpdateModel
@@ -27,6 +28,9 @@ interface IServiceTurboPlanController {
         produces = [MediaType.APPLICATION_JSON_VALUE]
     )
     fun findTurboPlanIdByProjectIdAndPipelineInfo(
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null,
         @ApiParam(value = "蓝盾项目id", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_PROJECT_ID)
         projectId: String,

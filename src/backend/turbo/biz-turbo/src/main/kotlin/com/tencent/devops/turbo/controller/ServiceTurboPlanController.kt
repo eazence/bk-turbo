@@ -20,6 +20,7 @@ class ServiceTurboPlanController @Autowired constructor(
     }
 
     override fun findTurboPlanIdByProjectIdAndPipelineInfo(
+        tenantId: String?,
         projectId: String,
         pipelineId: String,
         pipelineElementId: String
@@ -28,7 +29,8 @@ class ServiceTurboPlanController @Autowired constructor(
             turboPlanService.findMigratedTurboPlanByPipelineInfo(
                 projectId,
                 pipelineId,
-                pipelineElementId
+                pipelineElementId,
+                tenantId ?: TenantUtil.getTenantIdByEnglishName(projectId)
             )?.taskId
         )
     }
