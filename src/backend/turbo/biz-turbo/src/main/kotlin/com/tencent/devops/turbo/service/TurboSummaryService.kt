@@ -71,10 +71,10 @@ class TurboSummaryService @Autowired constructor(
     /**
      * 获取总览页面统计栏数据
      */
-    fun getOverviewStatRowData(projectId: String): TurboOverviewStatRowVO {
+    fun getOverviewStatRowData(tenantId: String?, projectId: String): TurboOverviewStatRowVO {
 
         // 获取加速方案数 和 加速次数
-        val engineCountAndExecuteCount = turboPlanService.getInstanceNumAndExecuteCount(projectId)
+        val engineCountAndExecuteCount = turboPlanService.getInstanceNumAndExecuteCount(tenantId, projectId)
 
         return if (engineCountAndExecuteCount.isNotEmpty()) {
             // 实际总耗时
@@ -99,10 +99,11 @@ class TurboSummaryService @Autowired constructor(
     /**
      * 获取总览页面耗时分布趋势图数据
      */
-    fun getTimeConsumingTrendData(dateType: String, projectId: String): List<TurboOverviewTrendVO> {
+    fun getTimeConsumingTrendData(dateType: String, projectId: String, tenantId: String?): List<TurboOverviewTrendVO> {
         val startDay = getStartTimeAndEndTimeByDatetype(dateType)
         // 查询开始时间和结束时间之间 实际耗时数据 及 预估耗时数据 并以日期分组
         val timeConsumingTrendDataList = turboSummaryDao.getTimeConsumingTrendData(
+            tenantId,
             projectId, startDay,
             LocalDate.now()
         )
@@ -113,12 +114,13 @@ class TurboSummaryService @Autowired constructor(
     /**
      * 获取总览页面编译次数趋势图数据
      */
-    fun getCompileNumberTrendData(dateType: String, projectId: String): List<TurboOverviewTrendVO> {
+    fun getCompileNumberTrendData(dateType: String, projectId: String, tenantId: String?): List<TurboOverviewTrendVO> {
 
         val startDay = getStartTimeAndEndTimeByDatetype(dateType)
 
         // 查询开始时间和结束时间之间的数据 并以时间分组
         val compileNumberTrendDataList = turboSummaryDao.getCompileNumberTrendData(
+            tenantId,
             projectId,
             startDay,
             LocalDate.now()

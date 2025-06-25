@@ -1,6 +1,7 @@
 package com.tencent.devops.turbo.api
 
 import com.tencent.devops.api.pojo.Response
+import com.tencent.devops.common.util.constants.AUTH_HEADER_BK_TENANT_ID
 import com.tencent.devops.common.util.constants.AUTH_HEADER_DEVOPS_USER_ID
 import com.tencent.devops.turbo.vo.TurboOverviewStatRowVO
 import com.tencent.devops.turbo.vo.TurboOverviewTrendVO
@@ -30,7 +31,10 @@ interface IUserTurboDaySummaryController {
         projectId: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<TurboOverviewStatRowVO>
 
     @ApiOperation("获取总览页面耗时分布趋势图数据")
@@ -47,7 +51,10 @@ interface IUserTurboDaySummaryController {
         projectId: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<List<TurboOverviewTrendVO>>
 
     @ApiOperation("获取总览页面编译次数趋势图数据")
@@ -64,6 +71,9 @@ interface IUserTurboDaySummaryController {
         projectId: String,
         @ApiParam(value = "用户信息", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_USER_ID)
-        user: String
+        user: String,
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        @ApiParam(value = "租户ID", required = false)
+        tenantId: String? = null
     ): Response<List<TurboOverviewTrendVO>>
 }

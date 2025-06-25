@@ -1,5 +1,6 @@
 package com.tencent.devops.turbo.dao.mongotemplate
 
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.common.util.constants.SYSTEM_ADMIN
 import com.tencent.devops.turbo.model.TTurboDaySummaryEntity
 import com.tencent.devops.turbo.pojo.TurboDaySummaryOverviewModel
@@ -59,6 +60,7 @@ class TurboSummaryDao @Autowired constructor(
      * 查询开始时间和结束时间之间的数据 并以时间分组统计编译次数
      */
     fun getCompileNumberTrendData(
+        tenantId: String?,
         projectId: String,
         startTime: LocalDate?,
         endTime: LocalDate?
@@ -71,6 +73,9 @@ class TurboSummaryDao @Autowired constructor(
         if (startTime != null && endTime != null) {
             query.addCriteria(Criteria.where("summary_day").gte(startTime).lte(endTime))
         }
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            query.addCriteria(Criteria.where("tenant_id").`in`(tenantId, TenantUtil.getTenantId()))
+        }
         return mongoTemplate.find(query, TurboDaySummaryOverviewModel::class.java, "t_turbo_day_summary_entity")
     }
 
@@ -78,6 +83,7 @@ class TurboSummaryDao @Autowired constructor(
      * 查询开始时间和结束时间之间的数据 并以时间分组 统计实际耗时和预估耗时
      */
     fun getTimeConsumingTrendData(
+        tenantId: String?,
         projectId: String,
         startTime: LocalDate?,
         endTime: LocalDate?
@@ -90,6 +96,9 @@ class TurboSummaryDao @Autowired constructor(
         query.addCriteria(Criteria.where("project_id").`is`(projectId))
         if (startTime != null && endTime != null) {
             query.addCriteria(Criteria.where("summary_day").gte(startTime).lte(endTime))
+        }
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            query.addCriteria(Criteria.where("tenant_id").`in`(tenantId, TenantUtil.getTenantId()))
         }
         return mongoTemplate.find(query, TurboDaySummaryOverviewModel::class.java, "t_turbo_day_summary_entity")
     }

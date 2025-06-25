@@ -490,8 +490,8 @@ class TurboPlanService @Autowired constructor(
     /**
      * 获取实例数和执行数
      */
-    fun getInstanceNumAndExecuteCount(projectId: String): List<TurboDaySummaryOverviewModel> {
-        return turboPlanDao.getInstanceNumAndExecuteCount(projectId)
+    fun getInstanceNumAndExecuteCount(tenantId: String?, projectId: String): List<TurboDaySummaryOverviewModel> {
+        return turboPlanDao.getInstanceNumAndExecuteCount(tenantId, projectId)
     }
 
     /**

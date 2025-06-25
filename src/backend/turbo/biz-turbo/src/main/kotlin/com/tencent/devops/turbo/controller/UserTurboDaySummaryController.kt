@@ -3,6 +3,7 @@ package com.tencent.devops.turbo.controller
 import com.tencent.devops.api.pojo.Response
 import com.tencent.devops.common.api.exception.TurboException
 import com.tencent.devops.common.api.exception.code.IS_NOT_ADMIN_MEMBER
+import com.tencent.devops.common.service.utils.TenantUtil
 import com.tencent.devops.common.util.constants.NO_ADMIN_MEMBER_MESSAGE
 import com.tencent.devops.turbo.api.IUserTurboDaySummaryController
 import com.tencent.devops.turbo.service.TurboAuthService
@@ -20,12 +21,12 @@ class UserTurboDaySummaryController @Autowired constructor(
     /**
      * 获取总览页面统计栏数据
      */
-    override fun getOverviewStatRowData(projectId: String, user: String): Response<TurboOverviewStatRowVO> {
+    override fun getOverviewStatRowData(projectId: String, user: String, tenantId: String?): Response<TurboOverviewStatRowVO> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
-        return Response.success(turboSummaryService.getOverviewStatRowData(projectId))
+        return Response.success(turboSummaryService.getOverviewStatRowData(tenantId, projectId))
     }
 
     /**
@@ -34,13 +35,14 @@ class UserTurboDaySummaryController @Autowired constructor(
     override fun getTimeConsumingTrendData(
         dateType: String,
         projectId: String,
-        user: String
+        user: String,
+        tenantId: String?
     ): Response<List<TurboOverviewTrendVO>> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
-        return Response.success(turboSummaryService.getTimeConsumingTrendData(dateType, projectId))
+        return Response.success(turboSummaryService.getTimeConsumingTrendData(dateType, projectId, tenantId))
     }
 
     /**
@@ -49,12 +51,13 @@ class UserTurboDaySummaryController @Autowired constructor(
     override fun getCompileNumberTrendData(
         dateType: String,
         projectId: String,
-        user: String
+        user: String,
+        tenantId: String?
     ): Response<List<TurboOverviewTrendVO>> {
         // 判断是否是管理员
-        if (!turboAuthService.getAuthResult(projectId, user)) {
+        if (!turboAuthService.getAuthResult(TenantUtil.parseEnglishName(tenantId, projectId), user)) {
             throw TurboException(errorCode = IS_NOT_ADMIN_MEMBER, errorMessage = NO_ADMIN_MEMBER_MESSAGE)
         }
-        return Response.success(turboSummaryService.getCompileNumberTrendData(dateType, projectId))
+        return Response.success(turboSummaryService.getCompileNumberTrendData(dateType, projectId, tenantId))
     }
 }

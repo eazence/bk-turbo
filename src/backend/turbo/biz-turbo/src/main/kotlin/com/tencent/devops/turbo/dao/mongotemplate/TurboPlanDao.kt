@@ -65,9 +65,13 @@ class TurboPlanDao @Autowired constructor(
     /**
      * 获取实例数量和执行次数
      */
-    fun getInstanceNumAndExecuteCount(projectId: String): List<TurboDaySummaryOverviewModel> {
+    fun getInstanceNumAndExecuteCount(tenantId: String?, projectId: String): List<TurboDaySummaryOverviewModel> {
+        val criteria = Criteria.where("project_id").`is`(projectId)
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            criteria.and("tenant_id").`in`(tenantId, TenantUtil.getTenantId())
+        }
 
-        val match = Aggregation.match(Criteria.where("project_id").`is`(projectId))
+        val match = Aggregation.match(criteria)
 
         val group = Aggregation.group("project_id")
             .count().`as`("plan_num")
