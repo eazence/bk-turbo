@@ -13,8 +13,14 @@ class BuildTurboPlanController @Autowired constructor(
     private val turboPlanService: TurboPlanService
 ) : IBuildTurboPlanController {
 
-    override fun findTurboPlanIdByProjectIdAndPipelineInfo(projectId: String, pipelineId: String, pipelineElementId: String): Response<String?> {
-        return Response.success(turboPlanService.findMigratedTurboPlanByPipelineInfo(projectId, pipelineId, pipelineElementId)?.taskId)
+    override fun findTurboPlanIdByProjectIdAndPipelineInfo(
+        projectId: String,
+        tenantId: String?,
+        pipelineId: String,
+        pipelineElementId: String
+    ): Response<String?> {
+        return Response.success(turboPlanService.findMigratedTurboPlanByPipelineInfo(projectId, pipelineId,
+            pipelineElementId, tenantId)?.taskId)
     }
 
     override fun findTurboPlanDetailById(

@@ -1,6 +1,7 @@
 package com.tencent.devops.turbo.api
 
 import com.tencent.devops.api.pojo.Response
+import com.tencent.devops.common.util.constants.AUTH_HEADER_BK_TENANT_ID
 import com.tencent.devops.common.util.constants.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.turbo.vo.TurboPlanDetailVO
 import io.swagger.annotations.Api
@@ -27,6 +28,9 @@ interface IBuildTurboPlanController {
         @ApiParam(value = "蓝盾项目id", required = true)
         @RequestHeader(AUTH_HEADER_DEVOPS_PROJECT_ID)
         projectId: String,
+        @ApiParam(value = "租户id")
+        @RequestHeader(AUTH_HEADER_BK_TENANT_ID)
+        tenantId: String?,
         @ApiParam(value = "流水线id", required = true)
         @PathVariable("pipelineId")
         pipelineId: String,
