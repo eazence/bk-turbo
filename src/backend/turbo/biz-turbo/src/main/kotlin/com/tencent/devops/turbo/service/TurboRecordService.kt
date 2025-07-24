@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.expression.spel.support.StandardEvaluationContext
+import org.springframework.expression.spel.support.SimpleEvaluationContext
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.LocalDateTime
@@ -123,7 +123,7 @@ class TurboRecordService @Autowired constructor(
             turboRecordEntity.executeTimeSecond = endTime - startTime
             turboRecordEntity.executeTimeValue =
                 "${(endTime - startTime) / 3600L}h ${((endTime - startTime) % 3600L) / 60L}m ${(endTime - startTime) % 60L}s"
-            val context = StandardEvaluationContext()
+            val context = SimpleEvaluationContext.forReadOnlyDataBinding().build()
             if (!spelParamMap.isNullOrEmpty()) {
                 for (paramName in spelParamMap) {
                     context.setVariable(paramName, turboDataMap[paramName])
@@ -165,7 +165,7 @@ class TurboRecordService @Autowired constructor(
             executeTimeSecond = endTime - startTime
             executeTimeValue =
                 "${(endTime - startTime) / 3600L}h ${((endTime - startTime) % 3600L) / 60L}m ${(endTime - startTime) % 60L}s"
-            val context = StandardEvaluationContext()
+            val context = SimpleEvaluationContext.forReadOnlyDataBinding().build()
             if (!spelParamMap.isNullOrEmpty()) {
                 for (paramName in spelParamMap) {
                     context.setVariable(paramName, turboDataMap[paramName])
@@ -460,7 +460,7 @@ class TurboRecordService @Autowired constructor(
         logger.info("update data for refresh, spel param map: $spelParamMap")
         return if (status == EnumDistccTaskStatus.FINISH.getTBSStatus()) {
             val endTime = ((turboDataMap["end_time"] ?: "0") as Int).toLong()
-            val context = StandardEvaluationContext()
+            val context = SimpleEvaluationContext.forReadOnlyDataBinding().build()
             if (!spelParamMap.isNullOrEmpty()) {
                 for (paramName in spelParamMap) {
                     context.setVariable(paramName, turboDataMap[paramName])
