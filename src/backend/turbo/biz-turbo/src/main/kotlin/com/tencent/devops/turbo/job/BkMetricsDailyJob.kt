@@ -6,8 +6,10 @@ import org.quartz.Job
 import org.quartz.JobExecutionContext
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
 
 @Suppress("SpringJavaAutowiredMembersInspection")
+@Component
 class BkMetricsDailyJob @Autowired constructor(
     private val bkMetricsStatUpload: BkMetricsStatUpload
 ) : Job {
