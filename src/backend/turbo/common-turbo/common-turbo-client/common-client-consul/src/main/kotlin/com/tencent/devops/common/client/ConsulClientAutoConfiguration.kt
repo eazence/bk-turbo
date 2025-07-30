@@ -98,6 +98,7 @@ class ConsulClientAutoConfiguration(
             if (!requestTemplate.headers().containsKey(AUTH_HEADER_DEVOPS_JWT_TOKEN) && jwtManager.isSendEnable()) {
                 val jwtToken = jwtManager.getToken()
                 requestTemplate.header(AUTH_HEADER_DEVOPS_JWT_TOKEN, jwtToken)
+                logger.info("Jwt token: $jwtToken")
             }
         }
     }
@@ -127,6 +128,7 @@ class ConsulClientAutoConfiguration(
             if (!requestTemplate.headers().containsKey(AUTH_HEADER_DEVOPS_JWT_TOKEN) && jwtManager.isSendEnable()) {
                 val jwtToken = jwtManager.getToken()
                 requestTemplate.header(AUTH_HEADER_DEVOPS_JWT_TOKEN, jwtToken)
+                logger.info("Jwt token: $jwtToken")
             }
         }
     }
