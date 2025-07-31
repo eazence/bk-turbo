@@ -20,7 +20,7 @@ class ServiceSecurityFilter(
     ) {
         val uri = request.requestURI
         val clientIp = request.remoteAddr
-
+        logger.info("ServiceSecurityFilter uri:$uri,clientIp:$clientIp")
         if (shouldFilter(uri, clientIp) && jwtManager.isSendEnable()) {
             val jwt = request.getHeader(AUTH_HEADER_DEVOPS_JWT_TOKEN)
             if (jwt.isNullOrBlank()) {
