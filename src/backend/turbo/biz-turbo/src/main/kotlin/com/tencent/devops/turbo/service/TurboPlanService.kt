@@ -154,8 +154,8 @@ class TurboPlanService @Autowired constructor(
             }
 
             // 2. 保存记录
-
             turboPlanEntity = TTurboPlanEntity(
+                tenantId = tenantId,
                 projectId = projectId ?: "",
                 planName = planName ?: "",
                 engineCode = engineCode ?: "",
