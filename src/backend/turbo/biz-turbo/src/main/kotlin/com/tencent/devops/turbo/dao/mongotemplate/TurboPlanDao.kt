@@ -103,9 +103,12 @@ class TurboPlanDao @Autowired constructor(
     /**
      * 查询项目下编译加速方案总数
      */
-    fun getTurboPlanCount(projectId: String): Long {
-        val query = Query()
-        query.addCriteria(Criteria.where("project_id").`is`(projectId))
+    fun getTurboPlanCount(tenantId: String?, projectId: String): Long {
+        val criteria = Criteria.where("project_id").`is`(projectId)
+        if (TenantUtil.useTenantCondition(tenantId)) {
+            criteria.and("tenant_id").`in`(tenantId, TenantUtil.getTenantId())
+        }
+        val query = Query().addCriteria(criteria)
         return mongoTemplate.count(query, TTurboPlanEntity::class.java)
     }
 
@@ -235,6 +238,8 @@ class TurboPlanDao @Autowired constructor(
         if (!projectId.isNullOrBlank()) {
             query.addCriteria(Criteria.where("project_id").`is`(projectId))
         }
+
+
         val totalCount = mongoTemplate.count(query, "t_turbo_plan_entity")
         query.with(pageable)
 

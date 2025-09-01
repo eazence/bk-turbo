@@ -483,7 +483,7 @@ class TurboPlanService @Autowired constructor(
                 openStatus = it.openStatus
             )
         }
-        val turboPlanCount = turboPlanDao.getTurboPlanCount(projectId)
+        val turboPlanCount = turboPlanDao.getTurboPlanCount(tenantId = tenantId, projectId = projectId)
         return TurboPlanPageVO(turboPlanList, turboPlanCount)
     }
 
