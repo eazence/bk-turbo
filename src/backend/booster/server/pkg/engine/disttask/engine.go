@@ -23,7 +23,6 @@ import (
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/common/blog"
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/common/codec"
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/common/compress"
-	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/common/http/httpclient"
 	commonMySQL "github.com/TencentBlueKing/bk-turbo/src/backend/booster/common/mysql"
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/server/config"
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/server/pkg/engine"
@@ -31,7 +30,6 @@ import (
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/server/pkg/resource/crm"
 	op "github.com/TencentBlueKing/bk-turbo/src/backend/booster/server/pkg/resource/crm/operator"
 	"github.com/TencentBlueKing/bk-turbo/src/backend/booster/server/pkg/resource/direct"
-	respack "github.com/TencentBlueKing/bk-turbo/src/backend/booster/server/pkg/resource/direct"
 
 	"github.com/jinzhu/gorm"
 )
@@ -55,7 +53,7 @@ const (
 
 const (
 	queueNameHeaderSymbol = "://"
-	// queueNameSep          = "<|>"
+	queueNameSep          = "<|>"
 
 	workerMacLauncherName = "start.sh"
 	workerWinLauncherName = "start.bat"
@@ -309,12 +307,6 @@ func (de *disttaskEngine) GetWhitelistBasicTable() *gorm.DB {
 	return de.mysql.GetDB().Table(TableWhitelist{}.TableName())
 }
 
-func (de *disttaskEngine) getClient(timeoutSecond int) *httpclient.HTTPClient {
-	client := httpclient.NewHTTPClient()
-	client.SetTimeOut(time.Duration(timeoutSecond) * time.Second)
-	return client
-}
-
 // cheack AllocateMap map ,make sure the key is the format of xx:xx:xx-xx:xx:xx and smaller time is ahead
 func (de *disttaskEngine) parseAllocateConf() bool {
 	timeFmt := regexp.MustCompile(`[0-9]+[0-9]+:+[0-9]+[0-9]+:+[0-9]+[0-9]`)
@@ -518,7 +510,6 @@ func putTask2Cache(taskid string, task *distTask) {
 	distTaskCacheLock.Unlock()
 
 	blog.Infof("task_cache engine(%s) put task(%s) to cache", EngineName, taskid)
-	return
 }
 
 func deleteTaskFromCache(taskid string) {
@@ -527,7 +518,6 @@ func deleteTaskFromCache(taskid string) {
 	distTaskCacheLock.Unlock()
 
 	blog.Infof("task_cache engine(%s) delete task(%s) from cache", EngineName, taskid)
-	return
 }
 
 func (de *disttaskEngine) getTask(taskID string) (*distTask, error) {
@@ -725,9 +715,9 @@ func (de *disttaskEngine) launchDirectTask(task *distTask, tb *engine.TaskBasic,
 		}
 		e[env.GetEnvKey(env.KeyWorkerMaxProcess)] = fmt.Sprintf("%d", jobsInt)
 		e[env.GetEnvKey(env.KeyWorkerMaxJobs)] = fmt.Sprintf("%d", jobsInt)
-		if err = de.directMgr.ExecuteCommand(r.Base.IP, task.ID, &respack.Command{
+		if err = de.directMgr.ExecuteCommand(r.Base.IP, task.ID, &direct.Command{
 			Cmd:          getDirectLaunchCommand(queueName),
-			CmdType:      respack.CmdLaunch,
+			CmdType:      direct.CmdLaunch,
 			Env:          e,
 			UserDefineID: task.ID,
 			Dir:          getDirectPath(task.InheritSetting.QueueName),
@@ -788,8 +778,9 @@ func (de *disttaskEngine) launchCRMTask(task *distTask, tb *engine.TaskBasic, qu
 			portsService: "http",
 			portsStats:   "http",
 		},
-		Image:   task.Operator.Image,
-		Volumes: volumes,
+		Image:         task.Operator.Image,
+		WorkerVersion: task.InheritSetting.WorkerVersion,
+		Volumes:       volumes,
 	}); err != nil && err != crm.ErrorResourceAlreadyInit {
 		blog.Errorf("engine(%s) try launching crm task(%s), init resource manager failed: %v",
 			EngineName, tb.ID, err)
@@ -819,7 +810,11 @@ func (de *disttaskEngine) launchCRMTask(task *distTask, tb *engine.TaskBasic, qu
 		return err
 	}
 	if err != nil {
-		blog.Errorf("engine(%s) launch crm task(%s) failed: %v", EngineName, tb.ID, err)
+		if err == crm.ErrorBrokerNotEnoughResources {
+			blog.Warnf("engine(%s) launch crm task(%s) failed: %v", EngineName, tb.ID, err)
+		} else {
+			blog.Errorf("engine(%s) launch crm task(%s) failed: %v", EngineName, tb.ID, err)
+		}
 		return err
 	}
 
@@ -878,9 +873,9 @@ func (de *disttaskEngine) launchDirectDone(task *distTask) (bool, error) {
 	workerList := make([]taskWorker, 0, 100)
 	for _, info := range infoList {
 		switch info.Status {
-		case respack.CommandStatusInit:
+		case direct.CommandStatusInit:
 			continue
-		case respack.CommandStatusSucceed:
+		case direct.CommandStatusSucceed:
 			workerList = append(workerList, taskWorker{
 				CPU:       0,
 				Mem:       0,
@@ -925,7 +920,7 @@ func (de *disttaskEngine) launchDirectDone(task *distTask) (bool, error) {
 	}
 
 	for _, info := range infoList {
-		if info.Status == respack.CommandStatusInit {
+		if info.Status == direct.CommandStatusInit {
 			return false, nil
 		}
 	}
@@ -1091,9 +1086,9 @@ func (de *disttaskEngine) releaseDirectTask(task *distTask) error {
 	}
 
 	for _, r := range resources {
-		_ = de.directMgr.ExecuteCommand(r.Base.IP, task.ID, &respack.Command{
+		_ = de.directMgr.ExecuteCommand(r.Base.IP, task.ID, &direct.Command{
 			Cmd:          getDirectReleaseCommand(task.InheritSetting.QueueName),
-			CmdType:      respack.CmdRelease,
+			CmdType:      direct.CmdRelease,
 			UserDefineID: task.ID,
 			Dir:          getDirectPath(task.InheritSetting.QueueName),
 			Path:         getDirectPath(task.InheritSetting.QueueName),
@@ -1187,13 +1182,14 @@ func (de *disttaskEngine) initBrokers() error {
 						portsService: "http",
 						portsStats:   "http",
 					},
-					Image:      worker.Image,
-					BrokerName: brokerName,
-					Volumes:    volumes,
+					Image:         worker.Image,
+					WorkerVersion: worker.WorkerVersion,
+					BrokerName:    brokerName,
+					Volumes:       volumes,
 				},
 				Instance: broker.Instance,
 				FitFunc: func(brokerParam, requestParam crm.ResourceParam) bool {
-					return brokerParam.City == requestParam.City && brokerParam.Image == requestParam.Image
+					return brokerParam.City == requestParam.City && brokerParam.WorkerVersion == requestParam.WorkerVersion
 				},
 				IdleKeepSeconds: broker.IdleKeepSeconds,
 				ReleaseLoop:     broker.ReleaseLoop,
@@ -1227,6 +1223,11 @@ func (de *disttaskEngine) getCrMgr(queueName string) crm.HandlerWithUser {
 }
 
 func (de *disttaskEngine) canTakeFromPublicQueue(queueName string) bool {
+	// 复合队列是虚拟队列，只负责取自身队列中的方案任务，不从公共队列取任务。
+	if strings.Contains(queueName, queueNameSep) {
+		return false
+	}
+
 	// p2p的任务不允许跨组
 	if containsP2P(queueName) {
 		return false
@@ -1393,8 +1394,6 @@ func putStatID(taskid, workid string, statid int) {
 	statIDLock.Lock()
 	statID[getStatKey(taskid, workid)] = statid
 	statIDLock.Unlock()
-
-	return
 }
 
 // TODO : statID 暂时没有清理机制，和layer里的task锁，以及资源锁等一样
@@ -1592,9 +1591,9 @@ func GetK8sInstanceKey(queueName string) *config.InstanceType {
 }
 
 func resourceSelector(
-	freeAgent []*respack.AgentResourceExternal,
-	condition interface{}) ([]*respack.AgentResourceExternal, error) {
-	if freeAgent == nil || len(freeAgent) == 0 {
+	freeAgent []*direct.AgentResourceExternal,
+	condition interface{}) ([]*direct.AgentResourceExternal, error) {
+	if len(freeAgent) == 0 {
 		return nil, engine.ErrorNoEnoughResources
 	}
 
@@ -1608,7 +1607,7 @@ func resourceSelector(
 		EngineName, condition, c.queueName, len(freeAgent))
 
 	var cpuTotal float64 = 0
-	r := make([]*respack.AgentResourceExternal, 0, 100)
+	r := make([]*direct.AgentResourceExternal, 0, 100)
 	for _, agent := range freeAgent {
 		blog.Debugf("engine(%s) try to check free agent(%s:%.2f) with cluster(%s), "+
 			"current cpu(%.2f) with queue(%s)",
@@ -1640,9 +1639,9 @@ func resourceSelector(
 }
 
 func p2pResourceSelector(
-	freeAgent []*respack.AgentResourceExternal,
-	condition interface{}) ([]*respack.AgentResourceExternal, error) {
-	if freeAgent == nil || len(freeAgent) == 0 {
+	freeAgent []*direct.AgentResourceExternal,
+	condition interface{}) ([]*direct.AgentResourceExternal, error) {
+	if len(freeAgent) == 0 {
 		return nil, engine.ErrorNoEnoughResources
 	}
 
@@ -1656,7 +1655,7 @@ func p2pResourceSelector(
 		EngineName, condition, c.queueName, len(freeAgent))
 
 	var cpuTotal float64 = 0
-	r := make([]*respack.AgentResourceExternal, 0, 100)
+	r := make([]*direct.AgentResourceExternal, 0, 100)
 	for _, agent := range freeAgent {
 		blog.Infof("engine(%s) try to check free agent(%s:%.2f) with cluster(%s), "+
 			"current cpu(%.2f) with queue(%s)",

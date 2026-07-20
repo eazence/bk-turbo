@@ -221,6 +221,7 @@ func GetFileInfo(fs []string, mustexisted bool, notdir bool, statbysearchdir boo
 				// continue
 				// TODO : return fail if not existed
 				blog.Warnf("common util: depend file:%s not existed ", f)
+				fileInfoCacheLock.RUnlock()
 				return nil, fmt.Errorf("%s not existed", f)
 			} else {
 				continue
@@ -232,6 +233,7 @@ func GetFileInfo(fs []string, mustexisted bool, notdir bool, statbysearchdir boo
 		}
 		is = append(is, i)
 	}
+	// 读缓存完成后立即释放读锁，后续耗时的 Lstat/Readlink 不再持锁
 	fileInfoCacheLock.RUnlock()
 
 	blog.Infof("common util: got %d file stat and %d not found", len(is), len(notfound))
