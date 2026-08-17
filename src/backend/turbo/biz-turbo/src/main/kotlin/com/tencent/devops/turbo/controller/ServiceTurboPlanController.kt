@@ -50,10 +50,10 @@ class ServiceTurboPlanController @Autowired constructor(
                         turboPlanService.updatePlanStatusByBkProjectStatus(
                             userId = userId,
                             projectId = projectId,
-                            enabled = enabled
+                            enable = enable
                         )
 
-                        logger.info("项目状态更新完成: userId=$userId, projectId=$projectId, enabled=$enabled")
+                        logger.info("项目状态更新完成: userId=$userId, projectId=$projectId, enable=$enable")
                         Response.success(true)
                     }
                 }

@@ -676,24 +676,24 @@ class TurboPlanService @Autowired constructor(
      * 项目停用：批量停用项目下的加速方案，更新者为Turbo
      * 项目启用：把更新者为Turbo的加速方案批量启用，用户停用的不需更改
      */
-    fun updatePlanStatusByBkProjectStatus(userId: String, projectId: String, enabled: Boolean) {
-        logger.info("ProjectStatusUpdate event: $userId, $projectId, $enabled")
+    fun updatePlanStatusByBkProjectStatus(userId: String, projectId: String, enable: Boolean) {
+        logger.info("ProjectStatusUpdate event: $userId, $projectId, $enable")
         // true表示启用项目，false表示停用项目
         // 启用项目时注意，只启用系统自动停用的方案，用户停用的方案保持停用
-        val updatedBy = if (enabled) SYSTEM_ADMIN else null
+        val updatedBy = if (enable) SYSTEM_ADMIN else null
 
         // 获取到待启用/待停用的加速方案清单
         val turboPlanEntityList = turboPlanDao.findByProjectIdAndOpenStatus(
             projectId = projectId,
             updatedBy = updatedBy,
-            openStatus = !enabled
+            openStatus = !enable
         )
         logger.info("Turbo plans to be updated count: ${turboPlanEntityList.size}")
         if (turboPlanEntityList.isEmpty()) {
             return
         }
 
-        val result = turboPlanDao.batchUpdateOpenStatus(turboPlanList = turboPlanEntityList, openStatus = enabled)
+        val result = turboPlanDao.batchUpdateOpenStatus(turboPlanList = turboPlanEntityList, openStatus = enable)
         if (result.wasAcknowledged()) {
             logger.info("Updated turbo plans successfully, projectId: $projectId, count: ${result.modifiedCount}")
         }
@@ -704,7 +704,7 @@ class TurboPlanService @Autowired constructor(
                     user = userId,
                     engineCode = it.engineCode,
                     planId = it.id!!,
-                    openStatus = !enabled,
+                    openStatus = !enable,
                     planName = null
                 )
             } catch (e: TurboException) {
