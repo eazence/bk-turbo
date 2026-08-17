@@ -15,5 +15,5 @@ data class TurboPlanUpdateModel(
     val projectName: String,
 
     @ApiModelProperty("开启状态：true表示启用项目，false表示停用项目")
-    val enabled: Boolean
+    val enable: Boolean
 )
