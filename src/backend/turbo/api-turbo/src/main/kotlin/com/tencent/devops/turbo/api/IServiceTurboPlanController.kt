@@ -3,7 +3,6 @@ package com.tencent.devops.turbo.api
 import com.tencent.devops.api.pojo.Response
 import com.tencent.devops.common.util.constants.AUTH_HEADER_DEVOPS_PROJECT_ID
 import com.tencent.devops.turbo.pojo.ProjectCallbackEvent
-import com.tencent.devops.turbo.pojo.TurboPlanUpdateModel
 import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import io.swagger.annotations.ApiParam
